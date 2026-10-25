@@ -20,8 +20,18 @@ cd crates/app && cargo tauri dev
 ```sh
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace          # also regenerates the TS bindings in crates/app/ui/src/bindings
+cargo test --workspace          # unit + mock-server tests; also regenerates the TS bindings
 cd crates/app/ui && pnpm lint   # tsc + prettier
+```
+
+The RPC client has two more test suites, both skipped by a plain `cargo test`:
+
+```sh
+# Against a throwaway Transmission 4.1.3 in Docker/Podman (OrbStack on macOS): adds and removes torrents.
+scripts/test-container.sh
+
+# Read-only, against a real Transmission (the Mac mini). Prints a summary of what it finds.
+XCVR_HOST=mac-mini.local XCVR_USER=… XCVR_PASS=… cargo test -p transmission --test smoke -- --ignored --nocapture
 ```
 
 ## Layout
@@ -30,4 +40,5 @@ cd crates/app/ui && pnpm lint   # tsc + prettier
 | --- | --- |
 | `crates/app` | The Tauri app: window, menu, commands (and later the poller, tray and handlers) |
 | `crates/app/ui` | Solid + TypeScript + Tailwind v4 UI. Reaches the backend only through `src/api.ts` |
-| `crates/transmission` | (Phase 2) the RPC client, types and poller diffing, with no Tauri dependency |
+| `crates/transmission` | The RPC client (JSON-RPC 2.0, Transmission 4.1+) and its types, with no Tauri dependency |
+| `scripts/test-container.sh` | Runs the client's integration tests against Transmission in a container |

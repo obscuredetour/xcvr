@@ -63,7 +63,10 @@ The `transmission` crate has no Tauri dependency, following Magnitide's rule of 
 - List fields per tick: `id, hash_string, name, status, percent_done, metadata_percent_complete, total_size, size_when_done, left_until_done, rate_download, rate_upload, eta, upload_ratio, uploaded_ever, added_date, done_date, activity_date, seconds_seeding, is_finished, is_stalled, error, error_string, queue_position, labels, download_dir, peers_connected`.
 - Inspector-only fields (polled only for the open torrent): `files, file_stats, peers, tracker_stats, tracker_list, piece_count, piece_size, comment, creator, date_created, magnet_link`, per-torrent limits.
 - `wanted` is a boolean array in 4.1.
-- `labels` are replaced as a whole by `torrent_set`. Adding a tag to many torrents means a read-modify-write per torrent, or grouping torrents by their current label set into batches. I believe labels can't contain commas; validate on input.
+- `labels` are replaced as a whole by `torrent_set`. Adding a tag to many torrents means a read-modify-write per torrent, or grouping torrents by their current label set into batches. Transmission trims labels and refuses empty ones and commas (`label::normalize` does the same, so the UI can say so before sending).
+- The 409 also carries `X-Transmission-Rpc-Version`; the client refuses servers below 6.0 (Transmission 4.0 and older) with a clear message.
+- `free_space` on a folder that doesn't exist is an RPC `SystemError` ("No such file or directory"). The add dialog should show "folder not found yet", not an error toast. A fresh Transmission's default download folder may not exist until a torrent finishes.
+- Renaming works on torrents whose data isn't on disk yet; Transmission renames the metadata.
 - Methods in use: `torrent_get/add/set/start/start_now/stop/verify/reannounce/remove/set_location/rename_path`, `queue_move_top/up/down/bottom`, `session_get/set`, `session_stats`, `free_space`.
 
 ## Poller rules
@@ -79,7 +82,7 @@ The `transmission` crate has no Tauri dependency, following Magnitide's rule of 
 Each phase ends with something runnable on both the Mac and the CachyOS machine.
 
 **0. Prep (you)**
-- Update the mini to Transmission 4.1.3.
+- Update the mini to Transmission 4.1.3 (4.1.4 is also out; either works, both speak RPC 6.0.1).
 - Note the host download path and the SMB mount path on each client.
 
 **1. Scaffold from Magnitide**
@@ -90,10 +93,12 @@ Each phase ends with something runnable on both the Mac and the CachyOS machine.
 **2. `transmission` crate**
 - Client: config, session-id retry, Basic auth, typed requests and responses for every method above, error mapping.
 - Tests: mock server (409 retry, 401, RPC error); integration tests against a throwaway `linuxserver/transmission` container (pinned to 4.1.x); one read-only smoke test against the mini, behind an env var.
+- Done: 12 unit tests, 11 mock-server tests, 6 container tests against 4.1.3 (`scripts/test-container.sh`), and the smoke test (checked against a container; still to run against the mini).
 
 **3. Poller + connection**
 - Tokio task in the app crate; diff and completion logic in the `transmission` crate, with unit tests.
 - Connection settings (host, port, user, password → keychain), Test Connection, connection profiles stored as a list.
+- macOS Local Network privacy: without permission, connecting to a LAN host fails with "No route to host" (EHOSTUNREACH) even though the host is up. `crates/app/Info.plist` gives the prompt its reason. When Test Connection gets EHOSTUNREACH on macOS, say to allow Transceiver in System Settings → Privacy & Security → Local Network, not just "couldn't reach".
 
 **4. Vertical slice: live read-only table**
 - Store keyed by hash, patched from diffs. `TorrentTable` columns: name, status, progress, size, down, up, ETA, ratio, added, labels.
