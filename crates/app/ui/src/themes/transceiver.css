@@ -1,0 +1,127 @@
+/* Transceiver's own themes, from the app icon: cool neutrals, teal (the waves
+   going out) and amber (the waves coming in). Teal is
+   the accent; downloads are amber and uploads teal, as on the icon. The accent
+   picker offers teal, amber, blue and purple, each tuned to read as text on its
+   theme's ground: lighter in Dark, darker in Light and Sepia. The other palette
+   names follow Catppuccin's (themes/index.css), for the roles. */
+
+/* Dark: near-neutral greys with only a hint of cool, so the teal and amber
+   carry the colour. */
+[data-theme='dark'] {
+  color-scheme: dark;
+  --crust: #0c0d0f;
+  --mantle: #1a1c20;
+  --base: #131518;
+  --surface-0: #212429;
+  --surface-1: #2a2d33;
+  --surface-2: #34383f;
+  --overlay-0: #4d5159;
+  --overlay-1: #686c74;
+  --overlay-2: #83878f;
+  --subtext-0: #9da1a8;
+  --subtext-1: #c4c7cc;
+  --text: #eceef1;
+  --teal: #7dd3c0;
+  --amber: #f2b36b;
+  --blue: #82b4f2;
+  --purple: #b8a2f4;
+  --green: #7fd18f;
+  --yellow: #e8c86c;
+  --red: #f26b76;
+  --peach: #f2a06b;
+  --sky: #8fd3ee;
+  --lavender: #b3bdf8;
+  --mauve: #c6a8f5;
+  --pink: #f2b8d8;
+
+  --accent: var(--teal);
+  --on-accent: #0c0d0f;
+  --link: var(--blue);
+  --field: var(--mantle);
+  --info: var(--sky);
+  --down: var(--amber);
+  --up: var(--teal);
+  --border: rgb(225 228 235 / 0.08);
+  --text-selection: color-mix(in srgb, var(--accent) 22%, transparent);
+  --star: var(--amber);
+}
+
+/* Light: cool paper, with the same hues deepened to read on it. */
+:root:not([data-theme]),
+[data-theme='light'] {
+  --crust: #e2e6ed;
+  --mantle: #ffffff;
+  --base: #f4f6f9;
+  --surface-0: #ebeef3;
+  --surface-1: #e0e4eb;
+  --surface-2: #d4d9e1;
+  --overlay-0: #aeb4be;
+  --overlay-1: #949aa5;
+  --overlay-2: #7d838e;
+  --subtext-0: #616875;
+  --subtext-1: #434a56;
+  --text: #19202b;
+  --teal: #0d7666;
+  --amber: #a85f0a;
+  --blue: #2463b0;
+  --purple: #6a4cc2;
+  --green: #2c7a4b;
+  --yellow: #94640a;
+  --red: #c0392f;
+  --peach: #c2541d;
+  --sky: #1c7fa8;
+  --lavender: #5868d8;
+  --mauve: #8839ef;
+  --pink: #c4448f;
+
+  --accent: var(--teal);
+  --on-accent: #ffffff;
+  --link: var(--blue);
+  --field: #ffffff;
+  --info: var(--sky);
+  --down: var(--amber);
+  --up: var(--teal);
+  --border: rgb(20 30 45 / 0.09);
+  --text-selection: color-mix(in srgb, var(--accent) 20%, transparent);
+  --star: #d9971f;
+}
+
+/* Warm paper tones, easy on the eyes. Kept from Magnitide, with the icon's
+   transfer colours. */
+[data-theme='sepia'] {
+  --crust: #e8dcc1;
+  --mantle: #f8f0dc;
+  --base: #f1e7d0;
+  --surface-0: #e7dbbf;
+  --surface-1: #ddd0b2;
+  --surface-2: #d2c4a4;
+  --overlay-0: #bba98d;
+  --overlay-1: #a8957b;
+  --overlay-2: #927f66;
+  --subtext-0: #7a6650;
+  --subtext-1: #5a4a38;
+  --text: #3b2f22;
+  --red: #a8321f;
+  --peach: #9a4f1e;
+  --amber: #96600f;
+  --yellow: #84620c;
+  --green: #4f7a35;
+  --teal: #2f6d63;
+  --sky: #2a7a96;
+  --blue: #2f5ea8;
+  --purple: #7b3697;
+  --lavender: #5868d8;
+  --mauve: #8839ef;
+  --pink: #b44a86;
+
+  --accent: var(--peach);
+  --link: var(--peach);
+  --field: var(--mantle);
+  --on-accent: #ffffff;
+  --down: var(--amber);
+  --up: var(--teal);
+  --border: rgb(59 47 34 / 0.12);
+  --text-selection: color-mix(in srgb, var(--accent) 20%, transparent);
+  --star: #c98a14;
+  --shadow: rgb(59 47 34 / 0.24);
+}

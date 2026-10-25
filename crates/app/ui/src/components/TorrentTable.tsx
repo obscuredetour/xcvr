@@ -79,9 +79,10 @@ const col = createColumnHelper<typeof features, Torrent>();
 
 const muted = (text: string) => <span class="text-muted">{text}</span>;
 
+/** Coming in and going out in the icon's colours (--down, --up), not the accent. */
 const TONE_BG: Record<Tone, string> = {
-  download: 'bg-accent',
-  seed: 'bg-success',
+  download: 'bg-down',
+  seed: 'bg-up',
   idle: 'bg-faint',
   check: 'bg-info',
   error: 'bg-danger',
@@ -580,7 +581,7 @@ function ColumnPicker(props: { table: ReturnType<typeof createTable<typeof featu
       label="Columns"
       iconOnly
       align="end"
-      buttonClass="grid size-6 place-items-center rounded-control hover:bg-hover aria-expanded:bg-hover"
+      buttonClass="grid size-6 place-items-center rounded-button hover:bg-hover aria-expanded:bg-hover"
       button={<Icon of={Ellipsis} class="text-muted" />}
     >
       <MenuLabel>Columns</MenuLabel>

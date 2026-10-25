@@ -9,7 +9,7 @@
  *    peach, yellow, green, teal, sky, sapphire, blue, lavender, mauve, pink,
  *    flamingo, rosewater, maroon). A Catppuccin flavour is pasted as is;
  *    Dracula (https://draculatheme.com/spec) maps on by name (see its block).
- *    Magnitide's own themes add coral and purple, the mark's (magnitide.css).
+ *    Transceiver's own themes add amber and purple, from the icon (transceiver.css).
  *    A theme only needs the colours the roles below use.
  *
  * 2. Roles: what the UI paints with, derived from the palette following the
@@ -56,7 +56,7 @@
    data-theme gets its own theme's roles. */
 
 @import './roles.css';
-@import './magnitide.css';
+@import './transceiver.css';
 @import './catppuccin.css';
 @import './dracula.css';
 /* After the themes: a chosen accent replaces the theme's own. */

@@ -79,7 +79,7 @@ function Message(props: {
         <Show when={props.icon}>
           {(icon) => (
             <span
-              class="grid size-14 place-items-center rounded-card"
+              class="grid size-14 place-items-center rounded-full"
               classList={{ 'bg-highlight text-accent': !props.danger, 'bg-danger/12 text-danger': props.danger }}
             >
               <Icon of={icon()} size={20} class={props.spin ? 'animate-spin' : ''} />

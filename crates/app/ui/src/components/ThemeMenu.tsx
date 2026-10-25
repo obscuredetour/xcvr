@@ -29,7 +29,7 @@ export function ThemeMenu() {
       label="Theme"
       iconOnly
       align="end"
-      buttonClass="grid size-8 place-items-center rounded-control hover:bg-hover aria-expanded:bg-hover"
+      buttonClass="grid size-8 place-items-center rounded-button hover:bg-hover aria-expanded:bg-hover"
       button={<Icon of={Contrast} size={16} class="text-muted" />}
     >
       <MenuLabel>Theme</MenuLabel>

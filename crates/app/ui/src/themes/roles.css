@@ -38,14 +38,21 @@
 
   --border: color-mix(in srgb, var(--overlay-0) 35%, transparent);
 
-  /* Corner radii, by what's rounded. Inner corners are the outer radius minus
-     the padding between, so a menu (12px, padded 6px) holds 6px items. */
-  --inset-radius: 4px; /* inside a control: segmented buttons, key hints, tiny tags */
-  --control-radius: 6px; /* buttons, inputs, selects, icon buttons, menu items, list rows */
-  --card-radius: 8px; /* boxes inside dialogs, preview cards */
-  --menu-radius: 12px; /* menus, autocomplete, toasts, the selection bar */
-  --dialog-radius: 16px; /* dialogs */
-  --chip-radius: 9999px; /* text pills: tags, formats, badges */
+  /* Corner radii, by what's rounded: Transceiver's are softer than Magnitide's,
+     with pill buttons. Inner corners are the outer radius minus the padding
+     between, so a menu (16px, padded 6px) holds 10px items. */
+  --inset-radius: 6px; /* inside a control: segmented buttons, key hints, tiny tags */
+  --control-radius: 10px; /* inputs, selects, menu items, list rows */
+  --button-radius: 9999px; /* buttons, icon buttons, the search field */
+  --card-radius: 14px; /* boxes inside dialogs, preview cards */
+  --menu-radius: 16px; /* menus, autocomplete, toasts, the selection bar */
+  --dialog-radius: 22px; /* dialogs */
+  --chip-radius: 9999px; /* text pills: labels, badges */
+
+  /* Transfer direction (progress bars, speeds): down and up. Transceiver's
+     themes take them from the icon (amber in, teal out). */
+  --down: var(--blue);
+  --up: var(--green);
 
   /* Dark-theme defaults; light themes override them below. */
   --inverse: var(--crust);

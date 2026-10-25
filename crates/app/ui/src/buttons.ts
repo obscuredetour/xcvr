@@ -3,7 +3,7 @@
 // on only some of them made those 2px taller.
 
 const base =
-  'inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-control border whitespace-nowrap disabled:cursor-default disabled:opacity-50';
+  'inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-button border whitespace-nowrap disabled:cursor-default disabled:opacity-50';
 
 /** The main action of a dialog: Save, Send, Import… */
 export const primaryButton = `${base} h-8 border-transparent bg-accent px-4 text-sm font-semibold text-on-accent hover:brightness-110 disabled:hover:brightness-100`;

@@ -14,7 +14,7 @@ import { Icon } from './Icon';
 import { keys } from '../keys';
 
 const iconButton =
-  'grid size-8 flex-none place-items-center rounded-control text-muted hover:bg-hover hover:text-fg aria-pressed:text-fg disabled:opacity-40 disabled:hover:bg-transparent';
+  'grid size-8 flex-none place-items-center rounded-button text-muted hover:bg-hover hover:text-fg aria-pressed:text-fg disabled:opacity-40 disabled:hover:bg-transparent';
 
 /** Searches names and labels as you type (tens of torrents: no need to wait for a pause). */
 function SearchField(props: Pick<Props, 'searchRef'>) {
@@ -30,7 +30,7 @@ function SearchField(props: Pick<Props, 'searchRef'>) {
         autocomplete="off"
         spellcheck={false}
         value={text()}
-        class="peer h-8 w-full rounded-control border border-line bg-field pr-[30px] pl-8 transition-[border-color,box-shadow] duration-150 outline-none select-text focus:border-focus focus:ring-3 focus:ring-focus/20 [&::-webkit-search-cancel-button]:hidden"
+        class="peer h-8 w-full rounded-button border border-line bg-field pr-[30px] pl-8 transition-[border-color,box-shadow] duration-150 outline-none select-text focus:border-focus focus:ring-3 focus:ring-focus/20 [&::-webkit-search-cancel-button]:hidden"
         onInput={(e) => setText(e.currentTarget.value)}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {

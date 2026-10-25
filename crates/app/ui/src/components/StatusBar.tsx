@@ -25,11 +25,11 @@ export function StatusBar() {
         {(s) => (
           <div class="ml-auto flex items-center gap-3 tabular-nums">
             <span class="flex items-center gap-1" title="Download speed">
-              <Icon of={ArrowDown} size={12} />
+              <Icon of={ArrowDown} size={12} class="text-down" />
               {formatSpeed(s().download_speed)}
             </span>
             <span class="flex items-center gap-1" title="Upload speed">
-              <Icon of={ArrowUp} size={12} />
+              <Icon of={ArrowUp} size={12} class="text-up" />
               {formatSpeed(s().upload_speed)}
             </span>
           </div>

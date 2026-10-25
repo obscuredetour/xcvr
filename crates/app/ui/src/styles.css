@@ -67,8 +67,11 @@
   --color-star: var(--star);
   --color-inverse: var(--inverse);
   --color-on-inverse: var(--on-inverse);
+  --color-down: var(--down);
+  --color-up: var(--up);
   --radius-inset: var(--inset-radius);
   --radius-control: var(--control-radius);
+  --radius-button: var(--button-radius);
   --radius-card: var(--card-radius);
   --radius-menu: var(--menu-radius);
   --radius-dialog: var(--dialog-radius);

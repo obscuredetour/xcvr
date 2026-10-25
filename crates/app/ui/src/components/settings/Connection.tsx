@@ -265,7 +265,7 @@ function CurrentState() {
   return (
     <Show when={d().host}>
       <div class="mb-6 flex items-start gap-3 rounded-card border border-line bg-element/60 p-4">
-        <span class="grid size-8 flex-none place-items-center rounded-control bg-highlight text-accent">
+        <span class="grid size-8 flex-none place-items-center rounded-full bg-highlight text-accent">
           <Icon of={KeyRound} size={16} />
         </span>
         <div class="min-w-0 flex-1 text-[12.5px]/[1.5]">

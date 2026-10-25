@@ -138,7 +138,7 @@ export function Callout(
       class={`flex gap-3 rounded-card border p-4 ${props.tone === 'warning' ? 'border-warning/30 bg-warning/8' : 'border-line bg-element/60'} ${props.class ?? ''}`}
     >
       <span
-        class="grid size-8 flex-none place-items-center rounded-control"
+        class="grid size-8 flex-none place-items-center rounded-full"
         classList={{
           'bg-warning/15 text-warning': props.tone === 'warning',
           'bg-highlight text-accent': props.tone !== 'warning',

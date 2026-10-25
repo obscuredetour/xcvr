@@ -1,5 +1,6 @@
 // Theme and accent selection. Themes live in themes/ (see themes/index.css)
-// and are registered here. From Magnitide, without its add-on theme files.
+// and are registered here. From Magnitide, with Transceiver's own Light, Dark
+// and Sepia, and without add-on theme files.
 
 import { createSignal } from 'solid-js';
 
@@ -26,15 +27,15 @@ const CATPPUCCIN_ACCENTS: Accent[] = [
   'Lavender',
 ].map((label) => ({ name: label.toLowerCase(), label }));
 
-/** The Light, Dark and Sepia themes' accents (each theme tunes them; magnitide.css). */
-const MAGNITIDE_ACCENTS: Accent[] = [
-  { name: 'yellow', label: 'Yellow' },
+/** Light and Dark's accents: the icon's teal and amber first (each theme tunes them; transceiver.css). */
+const TRANSCEIVER_ACCENTS: Accent[] = [
   { name: 'teal', label: 'Teal' },
+  { name: 'amber', label: 'Amber' },
+  { name: 'blue', label: 'Blue' },
   { name: 'purple', label: 'Purple' },
-  { name: 'coral', label: 'Coral' },
 ];
-/** Sepia's: its own peach, then the mark's. */
-const SEPIA_ACCENTS: Accent[] = [{ name: 'peach', label: 'Peach' }, ...MAGNITIDE_ACCENTS];
+/** Sepia's: its own peach, then the icon's. */
+const SEPIA_ACCENTS: Accent[] = [{ name: 'peach', label: 'Peach' }, ...TRANSCEIVER_ACCENTS];
 
 /** Dracula's accents, by its own names (mapped onto the palette's in dracula.css). */
 const DRACULA_ACCENTS: Accent[] = [
@@ -59,8 +60,8 @@ export type Theme = {
 };
 
 export const BUILTIN_THEMES: readonly Theme[] = [
-  { id: 'light', label: 'Light', appearance: 'light', accents: MAGNITIDE_ACCENTS, own: 'teal' },
-  { id: 'dark', label: 'Dark', appearance: 'dark', accents: MAGNITIDE_ACCENTS, own: 'teal' },
+  { id: 'light', label: 'Light', appearance: 'light', accents: TRANSCEIVER_ACCENTS, own: 'teal' },
+  { id: 'dark', label: 'Dark', appearance: 'dark', accents: TRANSCEIVER_ACCENTS, own: 'teal' },
   { id: 'sepia', label: 'Sepia', appearance: 'light', accents: SEPIA_ACCENTS, own: 'peach' },
   { id: 'catppuccin-latte', label: 'Catppuccin Latte', appearance: 'light', accents: CATPPUCCIN_ACCENTS, own: 'mauve' },
   {
