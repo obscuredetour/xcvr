@@ -262,6 +262,7 @@ pub struct Units {
 
 /// `session_stats`: what's happening now, and totals.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(default)]
 pub struct SessionStats {
     pub active_torrent_count: i64,
@@ -276,6 +277,7 @@ pub struct SessionStats {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(default)]
 pub struct StatsTotals {
     pub uploaded_bytes: i64,
@@ -287,6 +289,7 @@ pub struct StatsTotals {
 
 /// `free_space` for a folder on the host.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(default)]
 pub struct FreeSpace {
     pub path: String,

@@ -11,9 +11,12 @@ pub struct TorrentGet {
     pub removed: Vec<i64>,
 }
 
-/// A torrent, with only the fields that were asked for: everything else is None.
+/// A torrent, with only the fields that were asked for: everything else is None,
+/// and left out when it's serialized (so a diff carries only what changed).
 /// Sizes are in bytes, rates in bytes per second, dates in Unix seconds (0 for never).
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export, optional_fields))]
 #[serde(default)]
 pub struct Torrent {
     pub activity_date: Option<i64>,
@@ -231,6 +234,7 @@ impl TorrentField {
 
 /// A file in a torrent; its index is its place in `files`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(default)]
 pub struct File {
     /// Its path inside the torrent, `/`-separated, starting with the torrent's folder.
@@ -242,6 +246,7 @@ pub struct File {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(default)]
 pub struct FileStat {
     pub bytes_completed: i64,
@@ -250,6 +255,7 @@ pub struct FileStat {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(default)]
 pub struct Peer {
     pub address: String,
@@ -274,6 +280,7 @@ pub struct Peer {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(default)]
 pub struct PeersFrom {
     pub from_cache: i64,
@@ -286,6 +293,7 @@ pub struct PeersFrom {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(default)]
 pub struct Tracker {
     pub announce: String,
@@ -296,6 +304,7 @@ pub struct Tracker {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(default)]
 pub struct TrackerStat {
     pub announce: String,
@@ -331,6 +340,7 @@ pub struct TrackerStat {
 
 /// What a torrent is doing. Numbers outside 0–6 (a newer Transmission) come through as `Unknown`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export, type = "number"))]
 #[serde(from = "i64", into = "i64")]
 pub enum Status {
     Stopped,
@@ -375,6 +385,7 @@ impl From<Status> for i64 {
 
 /// `error` on a torrent.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export, type = "number"))]
 #[serde(from = "i64", into = "i64")]
 pub enum TorrentError {
     #[default]
@@ -412,6 +423,7 @@ impl From<TorrentError> for i64 {
 
 /// Bandwidth and file priority (`tr_priority_t`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export, type = "number"))]
 #[serde(from = "i64", into = "i64")]
 pub enum Priority {
     Low,
@@ -442,6 +454,7 @@ impl From<Priority> for i64 {
 
 /// Which seeding limit a torrent follows (`tr_ratiolimit`, `tr_idlelimit`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export, type = "number"))]
 #[serde(from = "i64", into = "i64")]
 pub enum LimitMode {
     /// The session's default.

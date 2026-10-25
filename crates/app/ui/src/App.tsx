@@ -2,14 +2,16 @@ import { createSignal, onCleanup, onMount, Show } from 'solid-js';
 
 import { onOpenSettings, onZoomMenu } from './api';
 import { ConfirmHost } from './confirm';
-import { EmptyState } from './components/EmptyState';
+import { watchConnection } from './connection';
 import { Inspector } from './components/Inspector';
 import { SettingsDialog, type SettingsSection } from './components/settings/Settings';
 import { Sidebar } from './components/Sidebar';
 import { StatusBar } from './components/StatusBar';
 import { TopBar } from './components/TopBar';
+import { TorrentArea } from './components/TorrentArea';
 import { QuestionHost } from './question';
 import { Toast } from './toast';
+import { watchTorrents } from './torrents';
 import { inspectorOpen, setInspectorOpen, setSidebarOpen, sidebarOpen } from './view';
 import { resetZoom, stepZoom } from './zoom';
 
@@ -72,6 +74,13 @@ export function App() {
       action === 'reset' ? resetZoom() : stepZoom(action === 'in' ? 1 : -1),
     );
     onCleanup(() => void unlistenZoom.then((off) => off()));
+    // The poller's reports: the connection, the speeds, and the torrents.
+    const stopConnection = watchConnection();
+    const stopTorrents = watchTorrents();
+    onCleanup(() => {
+      void stopConnection.then((off) => off());
+      void stopTorrents.then((off) => off());
+    });
   });
   onCleanup(() => document.removeEventListener('keydown', onKeyDown));
 
@@ -83,7 +92,7 @@ export function App() {
           <Sidebar />
         </Show>
         <section class="relative flex min-w-0 flex-1 flex-col" aria-label="Torrents">
-          <EmptyState onOpenSettings={() => openSettings('connection')} />
+          <TorrentArea onOpenSettings={() => openSettings('connection')} />
         </section>
         <Show when={inspectorOpen()}>
           <Inspector onClose={() => setInspectorOpen(false)} />

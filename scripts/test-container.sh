@@ -3,7 +3,7 @@
 # Transmission (linuxserver/transmission, pinned to the version the host runs)
 # in Docker or Podman (OrbStack on macOS). The container is removed afterwards.
 #
-#   scripts/test-container.sh            all container tests
+#   scripts/test-container.sh            all container tests (the client's, then the app's poller)
 #   scripts/test-container.sh magnet     only tests whose names contain "magnet"
 set -eu
 
@@ -41,4 +41,6 @@ case "${code:-}" in
   *) echo " no answer (last HTTP status: ${code:-none})."; "$DOCKER" logs "$NAME" | tail -20; exit 1 ;;
 esac
 
+# The client's tests, then the app's poller (its container tests are named container_*).
 XCVR_TEST_PORT="$PORT" cargo test -p transmission --test container -- --ignored --test-threads=1 "$@"
+XCVR_TEST_PORT="$PORT" cargo test -p xcvr -- --ignored --test-threads=1 container "$@"

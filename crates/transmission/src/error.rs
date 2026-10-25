@@ -54,6 +54,22 @@ impl Error {
     pub fn is_connection(&self) -> bool {
         matches!(self, Error::Unreachable { .. } | Error::Timeout | Error::Request(_))
     }
+
+    /// The OS said there's no route to the host. On macOS that's usually Local Network
+    /// privacy blocking the app, not the host being away (a host that's away times out).
+    pub fn is_host_unreachable(&self) -> bool {
+        let Error::Unreachable { source, .. } = self else { return false };
+        let mut cause: Option<&(dyn std::error::Error + 'static)> = Some(source);
+        while let Some(e) = cause {
+            if let Some(io) = e.downcast_ref::<std::io::Error>()
+                && io.kind() == std::io::ErrorKind::HostUnreachable
+            {
+                return true;
+            }
+            cause = e.source();
+        }
+        false
+    }
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

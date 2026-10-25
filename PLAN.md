@@ -99,6 +99,16 @@ Each phase ends with something runnable on both the Mac and the CachyOS machine.
 - Tokio task in the app crate; diff and completion logic in the `transmission` crate, with unit tests.
 - Connection settings (host, port, user, password → keychain), Test Connection, connection profiles stored as a list.
 - macOS Local Network privacy: without permission, connecting to a LAN host fails with "No route to host" (EHOSTUNREACH) even though the host is up. `crates/app/Info.plist` gives the prompt its reason. When Test Connection gets EHOSTUNREACH on macOS, say to allow Transceiver in System Settings → Privacy & Security → Local Network, not just "couldn't reach".
+- Done:
+  - `Snapshot`/`Diff` in the `transmission` crate, with unit tests.
+  - The poller (`crates/app/src/poller.rs`), which emits `connection`, `torrents` and `stats` events.
+  - A wrong password stops polling instead of retrying, since Transmission's anti-brute-force can lock out an address.
+  - A wall-clock jump means the computer woke from sleep, and it triggers a full resync.
+  - Profiles live in `connections.json`, passwords in the keychain (`secrets.rs`).
+  - Settings › Connection has Test and Save & Connect.
+  - The status bar and sidebar counts are live.
+  - The main area shows a simple live list until phase 4's table.
+  - The poller is tested in Tauri's mock app against the container.
 
 **4. Vertical slice: live read-only table**
 - Store keyed by hash, patched from diffs. `TorrentTable` columns: name, status, progress, size, down, up, ETA, ratio, added, labels.

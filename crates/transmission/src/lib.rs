@@ -8,6 +8,7 @@
 //! Spec: <https://github.com/transmission/transmission/blob/4.1.x/docs/rpc-spec.md>
 
 mod client;
+mod diff;
 mod error;
 mod ids;
 mod methods;
@@ -15,6 +16,7 @@ mod session;
 mod torrent;
 
 pub use client::{Client, Config, DEFAULT_PATH, DEFAULT_PORT};
+pub use diff::{Diff, Snapshot, finished};
 pub use error::{Error, Result, RpcCode};
 pub use ids::{Ids, TorrentId};
 pub use methods::{AddOutcome, AddTorrent, AddedTorrent, QueueMove, Renamed, TorrentSet, TorrentSource};
