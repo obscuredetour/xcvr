@@ -50,4 +50,12 @@ export const SHORTCUTS: { group: string; items: Shortcut[] }[] = [
       { keys: ['ArrowLeft', 'ArrowRight'], action: 'Resize the inspector (its edge focused)' },
     ],
   },
+  {
+    group: 'Torrents',
+    items: [
+      { keys: ['mod+click'], action: 'Add to or remove from the selection' },
+      { keys: ['shift+click'], action: 'Select a range' },
+      { keys: ['alt+ArrowLeft', 'alt+ArrowRight'], action: 'Move the focused column' },
+    ],
+  },
 ];

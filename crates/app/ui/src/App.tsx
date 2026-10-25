@@ -1,4 +1,4 @@
-import { createSignal, onCleanup, onMount, Show } from 'solid-js';
+import { createEffect, createSignal, onCleanup, onMount, Show } from 'solid-js';
 
 import { onOpenSettings, onZoomMenu } from './api';
 import { ConfirmHost } from './confirm';
@@ -10,8 +10,9 @@ import { StatusBar } from './components/StatusBar';
 import { TopBar } from './components/TopBar';
 import { TorrentArea } from './components/TorrentArea';
 import { QuestionHost } from './question';
+import { pruneSelection } from './selection';
 import { Toast } from './toast';
-import { watchTorrents } from './torrents';
+import { torrent, watchTorrents } from './torrents';
 import { inspectorOpen, setInspectorOpen, setSidebarOpen, sidebarOpen } from './view';
 import { resetZoom, stepZoom } from './zoom';
 
@@ -82,6 +83,9 @@ export function App() {
       void stopTorrents.then((off) => off());
     });
   });
+
+  // Selected torrents that are gone (removed, or another host) stop being selected.
+  createEffect(() => pruneSelection((hash) => torrent(hash) !== undefined));
   onCleanup(() => document.removeEventListener('keydown', onKeyDown));
 
   return (
@@ -92,7 +96,10 @@ export function App() {
           <Sidebar />
         </Show>
         <section class="relative flex min-w-0 flex-1 flex-col" aria-label="Torrents">
-          <TorrentArea onOpenSettings={() => openSettings('connection')} />
+          <TorrentArea
+            onOpenSettings={() => openSettings('connection')}
+            onOpenInspector={() => setInspectorOpen(true)}
+          />
         </section>
         <Show when={inspectorOpen()}>
           <Inspector onClose={() => setInspectorOpen(false)} />

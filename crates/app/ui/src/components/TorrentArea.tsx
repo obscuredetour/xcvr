@@ -1,25 +1,29 @@
-import { For, Match, Show, Switch } from 'solid-js';
+import { Match, Show, Switch } from 'solid-js';
 import CircleAlert from 'lucide-solid/icons/circle-alert';
 import LoaderCircle from 'lucide-solid/icons/loader-circle';
 import Server from 'lucide-solid/icons/server';
 
 import { api } from '../api';
+import { isFiltered, shownTorrents } from '../browse';
 import { primaryButton, secondaryButton } from '../buttons';
 import { connection, described } from '../connection';
-import { formatPercent, formatSize, formatSpeed, statusLabel } from '../format';
+import { select, selectedHashes, selectRange, toggleSelected } from '../selection';
 import { torrents } from '../torrents';
+import { query } from '../view';
 import { Icon } from './Icon';
+import { TorrentTable } from './TorrentTable';
 
 /**
  * Where the torrents go: what the connection is doing until it's up, then the
- * torrents. The list here is a stand-in for the table (phase 4).
+ * table. The torrents from before a dropped connection stay showing while it
+ * reconnects, rather than flashing away.
  */
-export function TorrentArea(props: { onOpenSettings(): void }) {
+export function TorrentArea(props: { onOpenSettings(): void; onOpenInspector(): void }) {
   return (
     <Switch>
-      <Match when={connection().state === 'connected'}>
+      <Match when={connection().state === 'connected' || (connection().state === 'unreachable' && torrents().length)}>
         <Show when={torrents().length} fallback={<Message title="No torrents" body="The host has no torrents yet." />}>
-          <QuickList />
+          <Table onOpen={() => props.onOpenInspector()} />
         </Show>
       </Match>
       <Match when={connection().state === 'notConfigured'}>
@@ -93,36 +97,25 @@ function Message(props: {
   );
 }
 
-/** Name, status, progress and speeds, live. Replaced by the virtualized table in phase 4. */
-function QuickList() {
+/** The table of what the filters and search let through; clicks select, double-click opens the inspector. */
+function Table(props: { onOpen(hash: string): void }) {
+  const click = (hash: string, e: MouseEvent) => {
+    if (e.metaKey || e.ctrlKey) toggleSelected(hash);
+    else if (e.shiftKey) selectRange(hash, shownTorrents());
+    else select(hash);
+  };
+  const empty = () =>
+    query().trim() ? `No torrents match “${query().trim()}”.` : isFiltered() ? 'No torrents here.' : 'No torrents.';
   return (
-    <div class="min-h-0 flex-1 overflow-y-auto">
-      <For each={torrents()}>
-        {(t) => (
-          <div class="flex h-10 items-center gap-4 border-b border-line px-4">
-            <div class="min-w-0 flex-1">
-              <div class="truncate font-medium">{t.name}</div>
-              <div class="truncate text-xs text-muted">
-                {statusLabel(t)} · {formatPercent(t.percent_done ?? 0)} of {formatSize(t.size_when_done ?? 0)}
-                {t.labels?.length ? ` · ${t.labels.join(', ')}` : ''}
-              </div>
-            </div>
-            <div class="h-1.5 w-28 flex-none overflow-hidden rounded-full bg-element">
-              <div
-                class="h-full rounded-full"
-                classList={{
-                  'bg-accent': t.status !== 6 && t.status !== 5,
-                  'bg-success': t.status === 6 || t.status === 5,
-                }}
-                style={{ width: `${(t.percent_done ?? 0) * 100}%` }}
-              />
-            </div>
-            <div class="w-36 flex-none text-right text-xs text-muted tabular-nums">
-              ↓ {formatSpeed(t.rate_download ?? 0)} ↑ {formatSpeed(t.rate_upload ?? 0)}
-            </div>
-          </div>
-        )}
-      </For>
-    </div>
+    <TorrentTable
+      rows={shownTorrents()}
+      selectedHashes={selectedHashes()}
+      emptyMessage={empty()}
+      onSelect={click}
+      onOpen={(hash) => {
+        select(hash);
+        props.onOpen(hash);
+      }}
+    />
   );
 }

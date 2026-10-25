@@ -114,6 +114,14 @@ Each phase ends with something runnable on both the Mac and the CachyOS machine.
 - Store keyed by hash, patched from diffs. `TorrentTable` columns: name, status, progress, size, down, up, ETA, ratio, added, labels.
 - Status filters, text search, sort. Status bar shows global speeds.
 - Checkpoint: watch real torrents update on both machines before building further.
+- Done:
+  - `TorrentTable`, ported from Magnitide's book table: virtualized, with resizable, reorderable and hideable columns.
+  - Columns: name, status, progress, size, down, up, ETA, ratio, added, labels. Hidden by default: uploaded, completed, seeding time, peers, queue, location.
+  - Sorting and filtering live in `browse.ts`. Sort, columns and the sidebar filters are remembered.
+  - Status and label filters combine. Search matches names and labels, ignoring case and accents.
+  - Click, ⌘-click and Shift-click select; double-click opens the inspector, which shows a summary for now.
+  - Cells read the live store, so a speed change repaints only that cell.
+  - Still to do: check it on CachyOS.
 
 **5. Actions + add**
 - Row and bulk actions: start, start now, stop, verify, reannounce, queue moves, remove (confirm dialog, optional data delete).

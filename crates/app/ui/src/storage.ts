@@ -1,4 +1,4 @@
-// Per-device conveniences only (last library, sort order). Storage can be
+// Per-device conveniences only (sort order, column widths). Storage can be
 // unavailable or cleared, so every access is guarded.
 
 export const storage = {
@@ -14,6 +14,13 @@ export const storage = {
       localStorage.setItem(key, value);
     } catch {
       // Not worth surfacing; the app works without it.
+    }
+  },
+  remove(key: string): void {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // As above.
     }
   },
 };

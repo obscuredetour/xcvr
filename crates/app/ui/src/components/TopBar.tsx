@@ -1,5 +1,5 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { createSignal, onCleanup, onMount } from 'solid-js';
+import { onCleanup, onMount } from 'solid-js';
 import PanelLeft from 'lucide-solid/icons/panel-left';
 import PanelRight from 'lucide-solid/icons/panel-right';
 import Plus from 'lucide-solid/icons/plus';
@@ -8,7 +8,7 @@ import Settings from 'lucide-solid/icons/settings';
 import X from 'lucide-solid/icons/x';
 
 import type { SettingsSection } from './settings/Settings';
-import { inspectorOpen, setInspectorOpen, setSidebarOpen, sidebarOpen } from '../view';
+import { inspectorOpen, query, setInspectorOpen, setQuery, setSidebarOpen, sidebarOpen } from '../view';
 import { ThemeMenu } from './ThemeMenu';
 import { Icon } from './Icon';
 import { keys } from '../keys';
@@ -16,16 +16,17 @@ import { keys } from '../keys';
 const iconButton =
   'grid size-8 flex-none place-items-center rounded-control text-muted hover:bg-hover hover:text-fg aria-pressed:text-fg disabled:opacity-40 disabled:hover:bg-transparent';
 
+/** Searches names and labels as you type (tens of torrents: no need to wait for a pause). */
 function SearchField(props: Pick<Props, 'searchRef'>) {
-  // Filtering arrives with the torrent list (phase 4); for now the field only holds its text.
-  const [text, setText] = createSignal('');
+  const text = query;
+  const setText = setQuery;
   return (
     <div class="relative flex w-full max-w-[460px] items-center justify-self-center" data-tauri-drag-region>
       <Icon of={Search} class="pointer-events-none absolute left-2.5 text-faint" />
       <input
         ref={props.searchRef}
         type="search"
-        placeholder="Search torrents"
+        placeholder="Search names and labels"
         autocomplete="off"
         spellcheck={false}
         value={text()}
