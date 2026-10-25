@@ -51,10 +51,28 @@ export const SHORTCUTS: { group: string; items: Shortcut[] }[] = [
     ],
   },
   {
+    group: 'Adding',
+    items: [
+      { keys: ['mod+N'], action: 'Add torrents' },
+      { keys: ['mod+O'], action: 'Choose .torrent files' },
+      { keys: ['mod+V'], action: 'Add a copied magnet link' },
+      { keys: ['mod+Enter'], action: 'Add (in the add dialog)' },
+    ],
+  },
+  {
     group: 'Torrents',
     items: [
+      { keys: ['ArrowUp', 'ArrowDown'], action: 'Move the selection' },
+      { keys: ['shift+ArrowUp', 'shift+ArrowDown'], action: 'Extend the selection' },
       { keys: ['mod+click'], action: 'Add to or remove from the selection' },
       { keys: ['shift+click'], action: 'Select a range' },
+      { keys: ['mod+A'], action: 'Select all' },
+      { keys: ['Escape'], action: 'Back to one torrent, then none' },
+      { keys: ['Enter'], action: 'Show in the inspector' },
+      { keys: ['Space'], action: 'Pause or resume' },
+      { keys: [deleteKeys], action: 'Remove' },
+      { keys: [`shift+${deleteKeys}`], action: 'Remove and delete files' },
+      { keys: ['shift+F10'], action: 'Torrent menu (also the menu key)' },
       { keys: ['alt+ArrowLeft', 'alt+ArrowRight'], action: 'Move the focused column' },
     ],
   },

@@ -37,6 +37,13 @@ export function selectRange(hash: string, list: readonly Torrent[]): void {
   setSelectedHashes(new Set(list.slice(a, b + 1).map((t) => t.hash_string!)));
 }
 
+/** ⌘A: everything in `list`, keeping the primary one when it's there. */
+export function selectAll(list: readonly Torrent[]): void {
+  const all = list.map((t) => t.hash_string!);
+  setSelectedHashes(new Set(all));
+  if (!all.includes(selectedHash() ?? '')) setSelectedHash(all[0] ?? null);
+}
+
 /** Drop selected torrents that are gone (removed, or another host now). */
 export function pruneSelection(exists: (hash: string) => boolean): void {
   const kept = [...selectedHashes()].filter(exists);

@@ -4,8 +4,16 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { getCurrentWebview } from '@tauri-apps/api/webview';
 
+import type { AddDefaults } from './bindings/AddDefaults';
+import type { AddOptions } from './bindings/AddOptions';
+import type { AddResult } from './bindings/AddResult';
+import type { AddSource } from './bindings/AddSource';
 import type { ConnectionSettings } from './bindings/ConnectionSettings';
+import type { FreeSpace } from './bindings/FreeSpace';
+import type { Metainfo } from './bindings/Metainfo';
+import type { TorrentAction } from './bindings/TorrentAction';
 import type { ConnectionState } from './bindings/ConnectionState';
 import type { Diff } from './bindings/Diff';
 import type { Problem } from './bindings/Problem';
@@ -14,7 +22,23 @@ import type { SessionStats } from './bindings/SessionStats';
 import type { TestResult } from './bindings/TestResult';
 import type { Torrent } from './bindings/Torrent';
 
-export type { ConnectionSettings, ConnectionState, Diff, Problem, Profile, SessionStats, TestResult, Torrent };
+export type {
+  AddDefaults,
+  AddOptions,
+  AddResult,
+  AddSource,
+  ConnectionSettings,
+  ConnectionState,
+  Diff,
+  FreeSpace,
+  Metainfo,
+  Problem,
+  Profile,
+  SessionStats,
+  TestResult,
+  Torrent,
+  TorrentAction,
+};
 
 /** A readable message from whatever a command rejected with (a Problem, a string, an Error). */
 export function errorMessage(err: unknown): string {
@@ -48,7 +72,25 @@ export const api = {
   sessionStats: () => invoke<SessionStats | null>('session_stats'),
   /** Poll now; also retries a failed connection. */
   pollNow: () => invoke<void>('poll_now'),
+
+  torrentAction: (action: TorrentAction, hashes: string[]) => invoke<void>('torrent_action', { action, hashes }),
+  /** `deleteData` also deletes the downloaded files on the host. */
+  removeTorrents: (hashes: string[], deleteData: boolean) => invoke<void>('remove_torrents', { hashes, deleteData }),
+  magnetLinks: (hashes: string[]) => invoke<string[]>('magnet_links', { hashes }),
+  /** Name, size and file count of a .torrent file on this machine. */
+  readTorrentFile: (path: string) => invoke<Metainfo>('read_torrent_file', { path }),
+  addTorrents: (sources: AddSource[], options: AddOptions) => invoke<AddResult[]>('add_torrents', { sources, options }),
+  addDefaults: () => invoke<AddDefaults>('add_defaults'),
+  freeSpace: (path: string) => invoke<FreeSpace>('free_space', { path }),
 };
+
+export type DragDrop =
+  { type: 'enter'; paths: string[] } | { type: 'over' } | { type: 'drop'; paths: string[] } | { type: 'leave' };
+
+/** Files dragged over / dropped onto the window (native paths, from Tauri). */
+export function onDragDrop(handler: (e: DragDrop) => void): Promise<UnlistenFn> {
+  return getCurrentWebview().onDragDropEvent((e) => handler(e.payload as DragDrop));
+}
 
 export function onConnection(handler: (state: ConnectionState) => void): Promise<UnlistenFn> {
   return listen<ConnectionState>('connection', (e) => handler(e.payload));

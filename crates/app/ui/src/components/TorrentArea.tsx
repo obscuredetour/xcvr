@@ -11,7 +11,8 @@ import { select, selectedHashes, selectRange, toggleSelected } from '../selectio
 import { torrents } from '../torrents';
 import { query } from '../view';
 import { Icon } from './Icon';
-import { TorrentTable } from './TorrentTable';
+import { type TableHandle, TorrentTable } from './TorrentTable';
+import { openTorrentMenu } from '../actions';
 
 /**
  * Where the torrents go: what the connection is doing until it's up, then the
@@ -97,12 +98,21 @@ function Message(props: {
   );
 }
 
+/** The table on screen, for the keyboard (scrolling the selection into view, focusing it). */
+export const tableView: { current: TableHandle | undefined } = { current: undefined };
+
 /** The table of what the filters and search let through; clicks select, double-click opens the inspector. */
 function Table(props: { onOpen(hash: string): void }) {
   const click = (hash: string, e: MouseEvent) => {
     if (e.metaKey || e.ctrlKey) toggleSelected(hash);
     else if (e.shiftKey) selectRange(hash, shownTorrents());
     else select(hash);
+  };
+  /** Right-click: the menu for the selection if it's in it, else for it alone (as in Finder). */
+  const contextMenu = (hash: string, e: MouseEvent) => {
+    e.preventDefault();
+    if (!selectedHashes().has(hash)) select(hash);
+    openTorrentMenu(e.clientX, e.clientY);
   };
   const empty = () =>
     query().trim() ? `No torrents match “${query().trim()}”.` : isFiltered() ? 'No torrents here.' : 'No torrents.';
@@ -111,7 +121,9 @@ function Table(props: { onOpen(hash: string): void }) {
       rows={shownTorrents()}
       selectedHashes={selectedHashes()}
       emptyMessage={empty()}
+      ref={(h) => (tableView.current = h)}
       onSelect={click}
+      onContextMenu={contextMenu}
       onOpen={(hash) => {
         select(hash);
         props.onOpen(hash);

@@ -127,6 +127,14 @@ Each phase ends with something runnable on both the Mac and the CachyOS machine.
 - Row and bulk actions: start, start now, stop, verify, reannounce, queue moves, remove (confirm dialog, optional data delete).
 - Selection (click, ⌘/Ctrl, Shift, select all), keyboard shortcuts, context menu.
 - Add dialog: paste magnet, pick `.torrent` (dialog plugin), drop on window. Download dir with recent/favourites and free space, labels, start paused.
+- Done:
+  - **Commands:** `actions.rs` holds `torrent_action`, `remove_torrents`, `add_torrents` (each source on its own, so one failure doesn't stop the rest), `add_defaults`, `free_space`, `magnet_links` and `read_torrent_file`. Each polls straight after.
+  - **.torrent reading:** a small bencode reader (`metainfo.rs`) shows a file's name, size and file count before adding.
+  - **Toolbar:** Add, Resume, Pause and Remove.
+  - **Right-click menu:** resume, pause, start now, verify, reannounce, queue, copy magnet, remove, and remove with files.
+  - **Keys:** ↑/↓ (⇧ extends), ⌘A, Esc, Enter, Space (pause or resume), ⌘⌫ / Delete (⇧ deletes files), ⌘N, ⌘O, ⌘V for magnets.
+  - **Add dialog:** magnets and files from drop, paste and the picker merge into one dialog. A failure stays listed with its reason.
+  - **Folders:** recent and favourite folders are per device. Free space shows "not on the host yet" for a missing folder rather than an error.
 
 **6. Inspector sidebar (must-have)**
 - Tabs or sections: General, Files (tree, priority, wanted), Peers, Trackers, Options (speed limits, seed ratio/idle limits, bandwidth priority).

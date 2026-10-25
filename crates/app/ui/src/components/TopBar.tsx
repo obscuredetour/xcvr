@@ -2,11 +2,19 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { onCleanup, onMount } from 'solid-js';
 import PanelLeft from 'lucide-solid/icons/panel-left';
 import PanelRight from 'lucide-solid/icons/panel-right';
+import Pause from 'lucide-solid/icons/pause';
+import Play from 'lucide-solid/icons/play';
 import Plus from 'lucide-solid/icons/plus';
 import Search from 'lucide-solid/icons/search';
 import Settings from 'lucide-solid/icons/settings';
+import Trash from 'lucide-solid/icons/trash';
 import X from 'lucide-solid/icons/x';
 
+import { act, chosen, isRunning, remove } from '../actions';
+import { openAdd } from '../adder';
+import { isConnected } from '../connection';
+import { deleteKeys } from '../keys';
+import { torrent } from '../torrents';
 import type { SettingsSection } from './settings/Settings';
 import { inspectorOpen, query, setInspectorOpen, setQuery, setSidebarOpen, sidebarOpen } from '../view';
 import { ThemeMenu } from './ThemeMenu';
@@ -118,14 +126,16 @@ type Props = {
 };
 
 /**
- * The toolbar, one row: the sidebar toggle and Add (beside the traffic lights
- * on macOS), search in the middle, then the inspector toggle, theme and
+ * The toolbar, one row: the sidebar toggle, Add, and Resume / Pause / Remove for
+ * the selection (beside the traffic lights on macOS), search in the middle, then
+ * the inspector toggle, theme and
  * settings. Its empty space drags the window (data-tauri-drag-region, on each
  * element that's empty space, since it doesn't pass to children).
  */
 export function TopBar(props: Props) {
   let bar!: HTMLElement;
   useMacTitleBar(() => bar);
+  const selection = () => chosen().map((h) => torrent(h));
 
   return (
     <header
@@ -143,9 +153,43 @@ export function TopBar(props: Props) {
         >
           <Icon of={PanelLeft} size={16} />
         </button>
-        {/* Add Torrent arrives in phase 5. */}
-        <button class={iconButton} title="Add torrent" aria-label="Add torrent" disabled>
+        <button
+          class={iconButton}
+          title={`Add torrents (${keys('mod+N')})`}
+          aria-label="Add torrents"
+          disabled={!isConnected()}
+          onClick={() => openAdd()}
+        >
           <Icon of={Plus} size={16} />
+        </button>
+        <span class="mx-1 h-4 w-px bg-line" aria-hidden="true" />
+        {/* What to do with the selection. */}
+        <button
+          class={iconButton}
+          title={`Resume (${keys('Space')})`}
+          aria-label="Resume"
+          disabled={!selection().some((t) => t?.status === 0)}
+          onClick={() => void act('start')}
+        >
+          <Icon of={Play} size={16} />
+        </button>
+        <button
+          class={iconButton}
+          title={`Pause (${keys('Space')})`}
+          aria-label="Pause"
+          disabled={!selection().some(isRunning)}
+          onClick={() => void act('stop')}
+        >
+          <Icon of={Pause} size={16} />
+        </button>
+        <button
+          class={iconButton}
+          title={`Remove (${keys(deleteKeys)}; with ${keys('shift')} to delete files too)`}
+          aria-label="Remove"
+          disabled={!selection().length}
+          onClick={(e) => void remove(e.shiftKey)}
+        >
+          <Icon of={Trash} size={16} />
         </button>
       </div>
       <SearchField searchRef={props.searchRef} />

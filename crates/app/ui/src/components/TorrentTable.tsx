@@ -294,6 +294,8 @@ type Props = {
   emptyMessage: string;
   /** A click; modifier keys (⌘, Shift) extend the selection. */
   onSelect(hash: string, e: MouseEvent): void;
+  /** A right-click on a row. */
+  onContextMenu(hash: string, e: MouseEvent): void;
   /** A double-click: show it in the inspector. */
   onOpen(hash: string): void;
   ref?: (handle: TableHandle) => void;
@@ -490,6 +492,7 @@ export function TorrentTable(props: Props) {
                     data-hash={r().id}
                     style={{ height: `${ROW_H}px`, transform: `translateY(${v.start}px)` }}
                     onClick={(e) => props.onSelect(r().id, e)}
+                    onContextMenu={(e) => props.onContextMenu(r().id, e)}
                     onDblClick={() => props.onOpen(r().id)}
                   >
                     <For each={r().getVisibleCells()}>

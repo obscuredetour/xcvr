@@ -127,7 +127,6 @@ impl Poller {
     }
 
     /// The connected client, for commands (start, stop, add…).
-    #[allow(dead_code)] // used by the action commands (phase 5)
     pub fn client(&self) -> Option<Arc<Client>> {
         lock(&self.shared.client).clone()
     }

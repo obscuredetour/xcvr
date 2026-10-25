@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod actions;
 mod commands;
 #[cfg(target_os = "macos")]
 mod menu;
@@ -59,6 +60,13 @@ fn main() {
             commands::torrents,
             commands::session_stats,
             commands::poll_now,
+            actions::torrent_action,
+            actions::remove_torrents,
+            actions::magnet_links,
+            actions::read_torrent_file,
+            actions::add_torrents,
+            actions::add_defaults,
+            actions::free_space,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Transceiver");

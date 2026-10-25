@@ -1,16 +1,21 @@
 import { createEffect, createSignal, onCleanup, onMount, Show } from 'solid-js';
 
+import { chosen, openTorrentMenu, remove, toggleRunning } from './actions';
+import { AddDialogHost, chooseTorrentFiles, openAdd, watchPaste } from './adder';
 import { onOpenSettings, onZoomMenu } from './api';
+import { shownTorrents } from './browse';
 import { ConfirmHost } from './confirm';
-import { watchConnection } from './connection';
+import { isConnected, watchConnection } from './connection';
+import { DropOverlay } from './components/DropOverlay';
 import { Inspector } from './components/Inspector';
+import { TorrentMenuHost } from './components/TorrentMenu';
 import { SettingsDialog, type SettingsSection } from './components/settings/Settings';
 import { Sidebar } from './components/Sidebar';
 import { StatusBar } from './components/StatusBar';
 import { TopBar } from './components/TopBar';
-import { TorrentArea } from './components/TorrentArea';
+import { tableView, TorrentArea } from './components/TorrentArea';
 import { QuestionHost } from './question';
-import { pruneSelection } from './selection';
+import { pruneSelection, select, selectAll, selectedHash, selectedHashes, selectRange } from './selection';
 import { Toast } from './toast';
 import { torrent, watchTorrents } from './torrents';
 import { inspectorOpen, setInspectorOpen, setSidebarOpen, sidebarOpen } from './view';
@@ -64,6 +69,68 @@ export function App() {
       setInspectorOpen(!inspectorOpen());
       return;
     }
+    // ⌘N: the add dialog; ⌘O: straight to choosing .torrent files.
+    if (cmd && !e.altKey && (e.key === 'n' || e.key === 'o') && isConnected()) {
+      e.preventDefault();
+      if (e.key === 'n') openAdd();
+      else void chooseTorrentFiles();
+      return;
+    }
+    if (inField || target.closest('textarea, [role=menu]')) return;
+    if (!isConnected()) return;
+    torrentKeys(e, target);
+  };
+
+  /** Where Shift+↑/↓ has extended the selection to (the primary selection stays the anchor). */
+  let cursor: string | null = null;
+
+  /** The table's keys: moving and extending the selection, and acting on it. */
+  const torrentKeys = (e: KeyboardEvent, target: HTMLElement) => {
+    const cmd = e.metaKey || e.ctrlKey;
+    const list = shownTorrents();
+    const hashes = chosen();
+
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      if (!list.length) return;
+      e.preventDefault();
+      const step = e.key === 'ArrowUp' ? -1 : 1;
+      const from = e.shiftKey && cursor ? cursor : selectedHash();
+      const at = list.findIndex((t) => t.hash_string === from);
+      const next = list[at < 0 ? 0 : Math.min(list.length - 1, Math.max(0, at + step))]!.hash_string!;
+      if (e.shiftKey && selectedHash()) selectRange(next, list);
+      else select(next);
+      cursor = next;
+      tableView.current?.reveal(next);
+      return;
+    }
+    cursor = null;
+    if (cmd && e.key === 'a') {
+      e.preventDefault();
+      selectAll(list);
+    } else if (e.key === 'Escape') {
+      // First back to one torrent, then nothing.
+      if (selectedHashes().size > 1) select(selectedHash());
+      else select(null);
+    } else if (!hashes.length) {
+      return;
+    } else if (e.key === 'Enter') {
+      if (target.closest('button, a')) return;
+      e.preventDefault();
+      setInspectorOpen(true);
+    } else if (e.key === ' ') {
+      if (target.closest('button, a')) return;
+      e.preventDefault();
+      void toggleRunning();
+    } else if ((e.key === 'Backspace' && cmd) || e.key === 'Delete') {
+      e.preventDefault();
+      void remove(e.shiftKey);
+    } else if (e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)) {
+      // The keyboard's menu key: open it beside the selected row.
+      e.preventDefault();
+      tableView.current?.reveal(hashes[0]!);
+      const r = document.querySelector(`[data-hash="${hashes[0]}"]`)?.getBoundingClientRect();
+      if (r) openTorrentMenu(r.left + 48, r.top + Math.min(r.height, 24));
+    }
   };
 
   onMount(() => {
@@ -82,6 +149,8 @@ export function App() {
       void stopConnection.then((off) => off());
       void stopTorrents.then((off) => off());
     });
+    // ⌘V with a magnet link (outside a text field) opens the add dialog with it.
+    onCleanup(watchPaste());
   });
 
   // Selected torrents that are gone (removed, or another host) stop being selected.
@@ -109,6 +178,9 @@ export function App() {
       <Show when={settingsOpen()}>
         <SettingsDialog section={settingsSection()} onClose={() => setSettingsOpen(false)} />
       </Show>
+      <AddDialogHost />
+      <DropOverlay />
+      <TorrentMenuHost />
       <ConfirmHost />
       <QuestionHost />
       <Toast />

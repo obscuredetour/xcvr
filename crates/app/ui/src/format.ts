@@ -3,11 +3,14 @@
 
 import type { Torrent } from './api';
 
-/** Bytes: "4.2 GB", "612 kB", "38 B". */
+/** `n` to `digits` decimals at most, without trailing zeros: 2.00 → "2", 4.20 → "4.2". */
+const trim = (n: number, digits: number) => String(Number(n.toFixed(digits)));
+
+/** Bytes: "4.2 GB", "312 GB", "1.25 TB", "612 kB", "38 B". Big numbers drop their decimals. */
 export function formatSize(bytes: number): string {
-  if (bytes >= 1e12) return `${(bytes / 1e12).toFixed(2)} TB`;
-  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
-  if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
+  if (bytes >= 1e12) return `${trim(bytes / 1e12, 2)} TB`;
+  if (bytes >= 1e9) return `${trim(bytes / 1e9, bytes >= 1e11 ? 0 : 1)} GB`;
+  if (bytes >= 1e6) return `${trim(bytes / 1e6, bytes >= 1e8 ? 0 : 1)} MB`;
   if (bytes >= 1e3) return `${Math.round(bytes / 1e3)} kB`;
   return `${bytes} B`;
 }
