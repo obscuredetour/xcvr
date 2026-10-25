@@ -1,0 +1,131 @@
+/* Magnitide's own themes: light and dark (the defaults), with teal as the
+   accent (the mark's widest slab) and blue for links, so links and accented
+   controls differ as in every other theme, and sepia. Their accent picker offers
+   the mark's four colours (yellow, teal, purple, coral), each tuned to read
+   as text on its theme's ground, so lighter in Dark and darker in Light and
+   Sepia than in the mark itself (brand README). Dark's coral is lighter and
+   pinker (#f07a6e, not #f14b4b), so on a dark ground it reads as the brand
+   rather than an error; its red, for danger, is a deeper crimson to stay apart
+   from it. The other palette colours come from Catppuccin Latte (light) and
+   Mocha (dark), for the roles and add-on accents. */
+
+:root:not([data-theme]),
+[data-theme='light'] {
+  --crust: #ebe9e4;
+  --mantle: #ffffff;
+  --base: #f6f5f2;
+  --surface-0: #efede8;
+  --surface-1: #e5e3dd;
+  --surface-2: #dad7d0;
+  --overlay-0: #b4b2ac;
+  --overlay-1: #9a9893;
+  --overlay-2: #83827d;
+  --subtext-0: #6b6a66;
+  --subtext-1: #4a4946;
+  --text: #1d1d1f;
+  --red: #b4372b;
+  --yellow: #94640a;
+  --green: #2c7a4b;
+  --teal: #0e6a6f;
+  --blue: #2462a8;
+  --rosewater: #dc8a78;
+  --flamingo: #dd7878;
+  --pink: #ea76cb;
+  --mauve: #8839ef;
+  --maroon: #e64553;
+  --peach: #e4603b;
+  --sky: #04a5e5;
+  --sapphire: #209fb5;
+  --lavender: #7287fd;
+  --coral: #f14b4b;
+  --purple: #8838a8;
+
+  --accent: var(--teal);
+  --link: var(--blue);
+  --field: #ffffff;
+  --on-accent: #ffffff;
+  --border: rgb(0 0 0 / 0.08);
+  --text-selection: color-mix(in srgb, var(--accent) 20%, transparent);
+  --star: #e0a526;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --crust: #0e0e10;
+  --mantle: #1e1e21;
+  --base: #151517;
+  --surface-0: #26262a;
+  --surface-1: #303035;
+  --surface-2: #3a3a40;
+  --overlay-0: #55545a;
+  --overlay-1: #6f6e74;
+  --overlay-2: #8a898f;
+  --subtext-0: #a1a0a6;
+  --subtext-1: #c4c3c8;
+  --text: #ececee;
+  --red: #f53a51;
+  --yellow: #e5c06a;
+  --green: #6cc58a;
+  --teal: #67c7c2;
+  --blue: #6aa7ec;
+  --rosewater: #f5e0dc;
+  --flamingo: #f2cdcd;
+  --pink: #f5c2e7;
+  --mauve: #cba6f7;
+  --maroon: #eba0ac;
+  --peach: #fab387;
+  --sky: #89dceb;
+  --sapphire: #74c7ec;
+  --lavender: #b4befe;
+  --coral: #f07a6e;
+  --purple: #ce99e5;
+
+  --accent: var(--teal);
+  --link: var(--blue);
+  --on-accent: #0e0e10;
+  --field: var(--mantle);
+  --border: rgb(255 255 255 / 0.08);
+  --text-selection: color-mix(in srgb, var(--accent) 20%, transparent);
+  --star: #e0a526;
+}
+
+/* Warm paper tones, easy on the eyes for long browsing sessions. */
+[data-theme='sepia'] {
+  --crust: #e8dcc1;
+  --mantle: #f8f0dc;
+  --base: #f1e7d0;
+  --surface-0: #e7dbbf;
+  --surface-1: #ddd0b2;
+  --surface-2: #d2c4a4;
+  --overlay-0: #bba98d;
+  --overlay-1: #a8957b;
+  --overlay-2: #927f66;
+  --subtext-0: #7a6650;
+  --subtext-1: #5a4a38;
+  --text: #3b2f22;
+  --red: #a8321f;
+  --peach: #9a4f1e;
+  --yellow: #84620c;
+  --green: #4f7a35;
+  --teal: #3b6e66;
+  --rosewater: #dc8a78;
+  --flamingo: #dd7878;
+  --pink: #ea76cb;
+  --mauve: #8839ef;
+  --maroon: #e64553;
+  --sky: #04a5e5;
+  --sapphire: #209fb5;
+  --blue: #1e66f5;
+  --lavender: #7287fd;
+  --coral: #f14b4b;
+  --purple: #7b3697;
+
+  --accent: var(--peach);
+  --link: var(--peach);
+  --field: var(--mantle);
+  --on-accent: #ffffff;
+  --border: rgb(59 47 34 / 0.12);
+  --text-selection: color-mix(in srgb, var(--accent) 20%, transparent);
+  --star: #c98a14;
+  --shadow: rgb(59 47 34 / 0.24);
+}

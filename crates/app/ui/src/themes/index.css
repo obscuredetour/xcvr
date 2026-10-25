@@ -1,0 +1,63 @@
+/*
+ * Themes, in two layers, so a theme is mostly a palette and existing theme
+ * libraries port over by pasting their colours.
+ *
+ * 1. Palette: each theme names its colours after Catppuccin's palette
+ *    (https://github.com/catppuccin/catppuccin/blob/main/docs/style-guide.md):
+ *    a neutral ramp, crust < mantle < base < surface-0..2 < overlay-0..2 <
+ *    subtext-0..1 < text (reversed in light themes), plus accents (red,
+ *    peach, yellow, green, teal, sky, sapphire, blue, lavender, mauve, pink,
+ *    flamingo, rosewater, maroon). A Catppuccin flavour is pasted as is;
+ *    Dracula (https://draculatheme.com/spec) maps on by name (see its block).
+ *    Magnitide's own themes add coral and purple, the mark's (magnitide.css).
+ *    A theme only needs the colours the roles below use.
+ *
+ * 2. Roles: what the UI paints with, derived from the palette following the
+ *    specs' role tables. Components use only these (as Tailwind colours, see
+ *    styles.css). A theme overrides a role when the default doesn't suit it.
+ *
+ *    Surfaces   --bg (main background: Catppuccin "Background Pane", Dracula
+ *               "Background"), --panel (side panes: "Secondary Panes"),
+ *               --popover (menus and dialogs: Dracula "Floating interactive
+ *               elements"), --field (text inputs), --element and
+ *               --element-hover (chips, buttons, tracks: "Surface Elements")
+ *    Text       --fg ("Body Copy"), --fg-muted ("Sub-Headlines, Labels"),
+ *               --fg-faint ("Subtle"), --link ("Links, URLs")
+ *    Accent     --accent, --on-accent (text on the accent: "On Accent"),
+ *               --focus (focus rings: "Active Border", Dracula "Focus
+ *               indicators"), --caret (the text cursor: "Cursor")
+ *    States     --hover (pointer and keyboard hover: Catppuccin "Cursor Line",
+ *               Dracula's Current Line overlay), --row-stripe (alternate table
+ *               rows, subtler), --selection and --on-selection (selected rows:
+ *               the accent, as for every other selection in the app),
+ *               --text-selection (selected text: "Selection Background",
+ *               Dracula "Selection"), --highlight (the active item in a menu
+ *               or list: an accent tint)
+ *    Status     --success, --warning, --danger, --info, --star (ratings),
+ *               --on-status (text on status fills)
+ *    Lines      --border (hairlines: Dracula "Subtle borders", Catppuccin
+ *               "Inactive Border", softened)
+ *    Shape      --inset-radius, --control-radius, --card-radius,
+ *               --menu-radius, --dialog-radius, --chip-radius (not from the
+ *               specs, which leave shape alone; see roles.css)
+ *    Layers     --inverse and --on-inverse (toasts, the selection bar),
+ *               --scrim (behind dialogs), --shadow (shadow colour)
+ *
+ * Files: roles.css (the roles and their defaults), accents.css (the accent
+ * picker), then one file per theme family. To add a theme, add a block with
+ * its palette (and any role overrides) to a family file, or a new file
+ * imported here, and register it in theme.ts with its appearance (light or
+ * dark) and the accents it offers. Add-on themes are theme files (see
+ * docs/themes.md), checked in Rust and added at runtime as one more block in
+ * the same palette names and roles.
+ */
+
+/* Roles, from the palette. On every themed element, so a swatch scoped with
+   data-theme gets its own theme's roles. */
+
+@import './roles.css';
+@import './magnitide.css';
+@import './catppuccin.css';
+@import './dracula.css';
+/* After the themes: a chosen accent replaces the theme's own. */
+@import './accents.css';

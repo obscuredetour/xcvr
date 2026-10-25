@@ -1,0 +1,53 @@
+// Keyboard shortcuts as people see them: macOS symbols (⌘E, ⌥←) there,
+// spelled out elsewhere (Ctrl+E, Alt+←). The handlers accept ⌘ or Ctrl
+// (`e.metaKey || e.ctrlKey`), so "mod" means whichever the platform uses.
+// SHORTCUTS lists them all, for Settings › Keyboard Shortcuts.
+
+export const isMac = /Mac/.test(navigator.userAgent);
+
+const MAC: Record<string, string> = {
+  mod: '⌘',
+  alt: '⌥',
+  shift: '⇧',
+  ctrl: '⌃',
+  Backspace: '⌫',
+  Enter: '↩',
+  Escape: 'Esc',
+};
+const OTHER: Record<string, string> = { mod: 'Ctrl', alt: 'Alt', shift: 'Shift', ctrl: 'Ctrl', Escape: 'Esc' };
+const BOTH: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', '-': '−' };
+
+/** "mod+E" → "⌘E" on macOS, "Ctrl+E" elsewhere. Parts are joined with "+"; "mod++" is ⌘+ / Ctrl++. */
+export function keys(combo: string): string {
+  const parts = combo.endsWith('++') ? [...combo.slice(0, -2).split('+'), '+'] : combo.split('+');
+  const names = parts.map((p) => (isMac ? MAC : OTHER)[p] ?? BOTH[p] ?? p);
+  // "⌘-click", as macOS writes it ("Ctrl+click" elsewhere).
+  if (isMac && names.at(-1) === 'click') return `${names.slice(0, -1).join('')}-click`;
+  return isMac ? names.join('') : names.join('+');
+}
+
+/** The key that removes the selected torrents. */
+export const deleteKeys = isMac ? 'mod+Backspace' : 'Delete';
+
+type Shortcut = { keys: string[]; action: string };
+
+/** Every shortcut, grouped, for Settings. Click modifiers are written "mod+click". Add each one as it's built. */
+export const SHORTCUTS: { group: string; items: Shortcut[] }[] = [
+  {
+    group: 'General',
+    items: [
+      { keys: ['mod+,'], action: 'Settings' },
+      { keys: ['mod+F', '/'], action: 'Search' },
+      { keys: ['mod++', 'mod+-'], action: 'Larger / smaller interface' },
+      { keys: ['mod+0'], action: 'Actual size' },
+    ],
+  },
+  {
+    group: 'Panels',
+    items: [
+      { keys: ['mod+alt+S'], action: 'Show / hide the sidebar' },
+      { keys: ['mod+I'], action: 'Show / hide the inspector' },
+      { keys: ['ArrowLeft', 'ArrowRight'], action: 'Resize the inspector (its edge focused)' },
+    ],
+  },
+];

@@ -1,0 +1,7 @@
+/target
+.DS_Store
+
+# makepkg's downloads, build directories and packages, from building the Arch package locally
+/packaging/arch/src/
+/packaging/arch/pkg/
+/packaging/arch/*.pkg.tar.*

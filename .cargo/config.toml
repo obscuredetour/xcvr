@@ -1,0 +1,6 @@
+# TypeScript bindings for the UI are generated from Rust types by ts-rs
+# whenever tests run (`cargo test`). Commit the regenerated files.
+[env]
+TS_RS_EXPORT_DIR = { value = "crates/app/ui/src/bindings", relative = true }
+# Ids and sizes fit comfortably in a JS number; serde_json emits numbers too.
+TS_RS_LARGE_INT = "number"

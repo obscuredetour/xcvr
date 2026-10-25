@@ -1,0 +1,145 @@
+@import 'tailwindcss';
+@import './themes/index.css';
+
+/* `mac:` applies only on macOS, e.g. to clear the traffic-light buttons. */
+@custom-variant mac (&:where(.is-mac, .is-mac *));
+
+@theme {
+  /* Only theme colours exist, so every colour in the UI follows the theme. */
+  --color-*: initial;
+  --color-white: #fff;
+  --color-black: #000;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+
+  --animate-slide-in: slide-in 0.18s ease-out;
+  --animate-toast-in: toast-in 0.16s ease-out;
+  --animate-menu-in: menu-in 0.12s ease-out;
+
+  @keyframes slide-in {
+    from {
+      transform: translateX(24px);
+      opacity: 0;
+    }
+  }
+  @keyframes menu-in {
+    from {
+      transform: translateY(-4px);
+      opacity: 0;
+    }
+  }
+  @keyframes toast-in {
+    from {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+  }
+}
+
+/* `inline` makes utilities reference the theme variables directly, so they
+   change at runtime when data-theme changes. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-popover: var(--popover);
+  --color-field: var(--field);
+  --color-element: var(--element);
+  --color-element-hover: var(--element-hover);
+  --color-fg: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-faint: var(--fg-faint);
+  --color-link: var(--link);
+  --color-line: var(--border);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-on-status: var(--on-status);
+  --color-focus: var(--focus);
+  --color-hover: var(--hover);
+  --color-stripe: var(--row-stripe);
+  --color-selection: var(--selection);
+  --color-on-selection: var(--on-selection);
+  --color-highlight: var(--highlight);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-star: var(--star);
+  --color-inverse: var(--inverse);
+  --color-on-inverse: var(--on-inverse);
+  --radius-inset: var(--inset-radius);
+  --radius-control: var(--control-radius);
+  --radius-card: var(--card-radius);
+  --radius-menu: var(--menu-radius);
+  --radius-dialog: var(--dialog-radius);
+  --radius-chip: var(--chip-radius);
+  --shadow-card: var(--card-shadow);
+  --shadow-lift: var(--lift-shadow);
+}
+
+@layer base {
+  /* Keep the root at the browser default (1rem = 16px) so rem-based spacing
+     and accessibility scaling behave; the UI text size is set on body. */
+  html {
+    @apply h-full overflow-hidden bg-bg;
+  }
+  body {
+    @apply h-full overflow-hidden font-sans text-[13px]/[1.4] text-fg antialiased select-none;
+  }
+  /* Window chrome: the toolbar along the top and the status bar along the
+     bottom; everything else sits between them. Linux draws a title bar above
+     the page; on macOS the window's is an overlay, so the traffic lights sit
+     in the toolbar. */
+  :root {
+    --toolbar-row: 44px;
+    --topbar-h: var(--toolbar-row);
+    --statusbar-h: 26px;
+    /* Room at the toolbar's start for the traffic lights. */
+    --lights-w: 0px;
+  }
+  /* The traffic lights are drawn at a fixed size and place
+     (trafficLightPosition in tauri.conf.json: centred in 44px), so the row
+     holding them and the room left for them stay native size at any
+     interface size (--zoom, set by zoom.ts); the row only grows to fit its
+     zoomed controls. macOS hides them in full screen (data-fullscreen,
+     TopBar.tsx). */
+  :root.is-mac {
+    --toolbar-row: max(calc(44px / var(--zoom, 1)), 40px);
+  }
+  :root.is-mac:not([data-fullscreen]) {
+    --lights-w: calc(72px / var(--zoom, 1));
+  }
+  ::selection {
+    background: var(--text-selection);
+  }
+  /* The webview's own focus ring, caret and form controls follow the system
+     accent; follow the theme instead. */
+  :root {
+    accent-color: var(--accent);
+    caret-color: var(--caret);
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+}
+
+/* Every modal dialog dims and blurs the app behind it, so the dialog stands
+   out and stays readable. ::backdrop inherits the theme's variables in
+   current webviews; the fallback covers older ones. */
+dialog::backdrop {
+  background: var(--scrim, rgb(0 0 0 / 0.38));
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  backdrop-filter: blur(8px) saturate(120%);
+  animation: backdrop-in 0.18s ease-out;
+}
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  dialog::backdrop {
+    animation: none;
+  }
+}

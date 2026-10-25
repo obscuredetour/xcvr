@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Transceiver",
+  "mainBinaryName": "xcvr",
+  "identifier": "com.obscuredetour.xcvr",
+  "build": {
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "ui/dist",
+    "beforeDevCommand": { "script": "pnpm dev", "cwd": "ui" },
+    "beforeBuildCommand": { "script": "pnpm build", "cwd": "ui" }
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Transceiver",
+        "width": 1200,
+        "height": 760,
+        "minWidth": 640,
+        "minHeight": 440,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": { "x": 16, "y": 24 }
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "category": "Utility",
+    "linux": {
+      "deb": { "desktopTemplate": "linux/xcvr.desktop" },
+      "rpm": { "desktopTemplate": "linux/xcvr.desktop" }
+    },
+    "macOS": {
+      "minimumSystemVersion": "13.0"
+    },
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
+  }
+}

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Placeholder mark: a transmitter dot with waves going up and coming down. Regenerate with `cargo tauri icon icons/source.svg` from crates/app. -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b3a55"/>
+      <stop offset="1" stop-color="#151c2c"/>
+    </linearGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="184" fill="url(#g)"/>
+  <g fill="none" stroke-linecap="round" stroke-width="56">
+    <path d="M352 352 A226 226 0 0 1 672 352" stroke="#7dd3c0"/>
+    <path d="M262 262 A354 354 0 0 1 762 262" stroke="#7dd3c0" opacity=".55"/>
+    <path d="M352 672 A226 226 0 0 0 672 672" stroke="#f2b36b"/>
+    <path d="M262 762 A354 354 0 0 0 762 762" stroke="#f2b36b" opacity=".55"/>
+  </g>
+  <circle cx="512" cy="512" r="72" fill="#eef2f7"/>
+</svg>

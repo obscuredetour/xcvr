@@ -1,0 +1,72 @@
+/* The roles (see index.css), from the palette. Declared on every themed
+   element, so a swatch scoped with data-theme gets its own theme's roles. */
+
+:root,
+[data-theme] {
+  --bg: var(--base);
+  --panel: var(--mantle);
+  --popover: var(--mantle);
+  --field: var(--base);
+  --element: var(--surface-0);
+  --element-hover: var(--surface-1);
+
+  --fg: var(--text);
+  --fg-muted: var(--subtext-0);
+  --fg-faint: var(--overlay-1);
+  --link: var(--blue);
+
+  --accent: var(--blue);
+  --on-accent: var(--base);
+  --focus: var(--accent);
+  --caret: var(--fg);
+
+  --hover: color-mix(in srgb, var(--text) 15%, transparent);
+  --row-stripe: color-mix(in srgb, var(--text) 8%, transparent);
+  /* Selected rows: the accent, like every other selection in the app. */
+  --selection: var(--accent);
+  --on-selection: var(--on-accent);
+  /* Selected text: Catppuccin "Selection Background", Overlay 2 at 20-30%. */
+  --text-selection: color-mix(in srgb, var(--overlay-2) 25%, transparent);
+  --highlight: color-mix(in srgb, var(--accent) 15%, transparent);
+
+  --success: var(--green);
+  --warning: var(--yellow);
+  --danger: var(--red);
+  --info: var(--teal);
+  --star: var(--yellow);
+  --on-status: var(--base);
+
+  --border: color-mix(in srgb, var(--overlay-0) 35%, transparent);
+
+  /* Corner radii, by what's rounded. Inner corners are the outer radius minus
+     the padding between, so a menu (12px, padded 6px) holds 6px items. */
+  --inset-radius: 4px; /* inside a control: segmented buttons, key hints, tiny tags */
+  --control-radius: 6px; /* buttons, inputs, selects, icon buttons, menu items, list rows */
+  --card-radius: 8px; /* boxes inside dialogs, preview cards */
+  --menu-radius: 12px; /* menus, autocomplete, toasts, the selection bar */
+  --dialog-radius: 16px; /* dialogs */
+  --chip-radius: 9999px; /* text pills: tags, formats, badges */
+
+  /* Dark-theme defaults; light themes override them below. */
+  --inverse: var(--crust);
+  --on-inverse: var(--text);
+  --scrim: rgb(0 0 0 / 0.38);
+  --shadow: rgb(0 0 0 / 0.75);
+  --card-shadow:
+    0 1px 2px color-mix(in srgb, var(--shadow) 60%, transparent),
+    0 4px 14px color-mix(in srgb, var(--shadow) 45%, transparent);
+  --lift-shadow:
+    0 2px 4px color-mix(in srgb, var(--shadow) 65%, transparent),
+    0 12px 30px color-mix(in srgb, var(--shadow) 65%, transparent);
+}
+
+/* Light themes: a dark toast, a lighter scrim and softer shadows. */
+/* data-appearance comes from the theme's registration in theme.ts. */
+:root:not([data-theme]),
+[data-appearance='light'] {
+  color-scheme: light;
+  --inverse: var(--text);
+  --on-inverse: var(--base);
+  --scrim: color-mix(in srgb, var(--text) 22%, transparent);
+  --shadow: rgb(0 0 0 / 0.2);
+}

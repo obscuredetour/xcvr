@@ -1,0 +1,10 @@
+/* The accent picker: theme.ts sets the chosen palette colour as --accent on
+   <html> (and data-accent), so any palette name works, an add-on's own
+   included. Text on it turns dark or light by the accent's lightness, since a
+   theme's on-accent suits only its own accent. */
+
+@supports (color: oklch(from red l c h)) {
+  :root[data-accent] {
+    --on-accent: oklch(from var(--accent) clamp(0.2, (0.64 - l) * 1000, 0.99) 0.02 h);
+  }
+}
