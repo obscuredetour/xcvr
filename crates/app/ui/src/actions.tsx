@@ -4,7 +4,7 @@
 
 import { createSignal } from 'solid-js';
 
-import { api, errorMessage, type Torrent, type TorrentAction } from './api';
+import { api, asProblem, errorMessage, type Torrent, type TorrentAction } from './api';
 import { confirm } from './confirm';
 import { selectedHash, selectedHashes } from './selection';
 import { toast } from './toast';
@@ -75,6 +75,35 @@ export async function copyMagnets(hashes: string[] = chosen()): Promise<void> {
   } catch (err) {
     toast(errorMessage(err), { error: true });
   }
+}
+
+/** Open a torrent (or one of its files) on this computer, or reveal it, through the path mappings. */
+export async function openHere(hash: string, file: number | null, reveal: boolean): Promise<void> {
+  try {
+    await api.openTorrent(hash, file, reveal);
+  } catch (err) {
+    const p = asProblem(err);
+    toast(p.hint ? `${p.message} ${p.hint}` : p.message, { error: true });
+  }
+}
+
+/** What the rename dialog is renaming: a torrent, or a file or folder inside it. */
+export type RenameTarget = { hash: string; path: string; current: string };
+const [renaming, setRenaming] = createSignal<RenameTarget | null>(null);
+export { renaming, setRenaming };
+
+/** Rename a torrent (its top folder or single file). */
+export function renameTorrent(hash: string = chosen()[0] ?? ''): void {
+  const t = torrent(hash);
+  if (t?.name) setRenaming({ hash, path: t.name, current: t.name });
+}
+
+/** Which torrents the set-location dialog moves. */
+const [relocating, setRelocating] = createSignal<string[] | null>(null);
+export { relocating, setRelocating };
+
+export function setLocation(hashes: string[] = chosen()): void {
+  if (hashes.length) setRelocating(hashes);
 }
 
 /** The right-click menu: where, and for which torrents. Shown by <TorrentMenuHost/>. */

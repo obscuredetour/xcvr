@@ -3,6 +3,7 @@ import type { Component } from 'solid-js';
 import type { LucideProps } from 'lucide-solid';
 import AppWindow from 'lucide-solid/icons/app-window';
 import Info from 'lucide-solid/icons/info';
+import FolderSync from 'lucide-solid/icons/folder-sync';
 import Keyboard from 'lucide-solid/icons/keyboard';
 import Palette from 'lucide-solid/icons/palette';
 import Server from 'lucide-solid/icons/server';
@@ -13,10 +14,11 @@ import { Icon } from '../Icon';
 import { About } from './About';
 import { Appearance } from './Appearance';
 import { ConnectionSettings } from './Connection';
+import { PathSettings } from './Paths';
 import { ShortcutSettings } from './Shortcuts';
 import { ThemeSettings } from './Themes';
 
-export type SettingsSection = 'appearance' | 'themes' | 'connection' | 'shortcuts' | 'about';
+export type SettingsSection = 'appearance' | 'themes' | 'connection' | 'paths' | 'shortcuts' | 'about';
 
 type Entry = { id: SettingsSection; label: string; icon: Component<LucideProps> };
 
@@ -26,7 +28,10 @@ const SECTIONS: Entry[][] = [
     { id: 'appearance', label: 'Appearance', icon: AppWindow },
     { id: 'themes', label: 'Themes', icon: Palette },
   ],
-  [{ id: 'connection', label: 'Connection', icon: Server }],
+  [
+    { id: 'connection', label: 'Connection', icon: Server },
+    { id: 'paths', label: 'Paths', icon: FolderSync },
+  ],
   [
     { id: 'shortcuts', label: 'Keyboard Shortcuts', icon: Keyboard },
     { id: 'about', label: 'About', icon: Info },
@@ -110,6 +115,9 @@ export function SettingsDialog(props: { onClose(): void; section?: SettingsSecti
             </Match>
             <Match when={section() === 'connection'}>
               <ConnectionSettings />
+            </Match>
+            <Match when={section() === 'paths'}>
+              <PathSettings />
             </Match>
             <Match when={section() === 'shortcuts'}>
               <ShortcutSettings />

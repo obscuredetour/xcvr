@@ -140,6 +140,14 @@ Each phase ends with something runnable on both the Mac and the CachyOS machine.
 - Tabs or sections: General, Files (tree, priority, wanted), Peers, Trackers, Options (speed limits, seed ratio/idle limits, bandwidth priority).
 - Rename (`torrent_rename_path`) and Set Location (move data, or point at existing data).
 - Open / Reveal through path mapping (settings: host prefix → local prefix per client).
+- Done:
+  - **Details:** the poller follows the inspected torrent (`Poller::follow`) and sends its details only when they change. That's one extra request per tick, and only while the inspector shows one torrent.
+  - **Tabs:** General, Files (a tree with download checkboxes, mixed states and per-file priority), Peers (busiest first), Trackers (by tier, failures in amber) and Options (priority, speed limits, seeding at ratio or idle, peer limit, sequential download).
+  - **Commands:** `inspect.rs` holds `set_torrents`, which drops empty file lists because Transmission reads an empty list as every file. It also holds `rename_torrent`, `set_location` and `open_torrent`.
+  - **Open/Reveal:** `mappings.rs` maps the host's folders to this computer by whole folder names, longest match first, and finds unfinished `.part` files.
+  - **Settings › Paths:** shows whether each local folder exists.
+  - **Rename and Set Location dialogs:** from the inspector, the right-click menu, F2 and ⌘L. Files and folders inside a torrent can be renamed from the Files tab's right-click menu.
+  - **Original names:** after a rename, Transmission reports only the new name (name, files, magnet `dn`). The original survives only in its copy of the .torrent on the host (`torrent_file`). `original_name` reads that copy when a path mapping reaches it. Otherwise it uses `originals.json`, which records renames made in Transceiver on this computer, keeping the first name. Details shows "Originally …" under the name.
 
 **7. Labels (tags)**
 - Sidebar label list with counts, with rename and delete across torrents.

@@ -1,6 +1,8 @@
 import { createEffect, createSignal, onCleanup, onMount, Show } from 'solid-js';
 
-import { chosen, openTorrentMenu, remove, toggleRunning } from './actions';
+import { chosen, openHere, openTorrentMenu, remove, renameTorrent, setLocation, toggleRunning } from './actions';
+import { TorrentDialogsHost } from './components/TorrentDialogs';
+import { watchInspector } from './inspector';
 import { AddDialogHost, chooseTorrentFiles, openAdd, watchPaste } from './adder';
 import { onOpenSettings, onZoomMenu } from './api';
 import { shownTorrents } from './browse';
@@ -124,6 +126,16 @@ export function App() {
     } else if ((e.key === 'Backspace' && cmd) || e.key === 'Delete') {
       e.preventDefault();
       void remove(e.shiftKey);
+    } else if (e.key === 'F2') {
+      e.preventDefault();
+      renameTorrent(hashes[0]);
+    } else if (cmd && e.key === 'l') {
+      e.preventDefault();
+      setLocation(hashes);
+    } else if (cmd && (e.key === 'r' || e.key === 'ArrowDown')) {
+      // ⌘R reveals, ⌘↓ opens (as in Finder).
+      e.preventDefault();
+      void openHere(hashes[0]!, null, e.key === 'r');
     } else if (e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)) {
       // The keyboard's menu key: open it beside the selected row.
       e.preventDefault();
@@ -151,6 +163,8 @@ export function App() {
     });
     // ⌘V with a magnet link (outside a text field) opens the add dialog with it.
     onCleanup(watchPaste());
+    // The inspector's torrent, in full, while it shows one.
+    watchInspector();
   });
 
   // Selected torrents that are gone (removed, or another host) stop being selected.
@@ -181,6 +195,7 @@ export function App() {
       <AddDialogHost />
       <DropOverlay />
       <TorrentMenuHost />
+      <TorrentDialogsHost />
       <ConfirmHost />
       <QuestionHost />
       <Toast />

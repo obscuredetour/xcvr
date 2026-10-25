@@ -12,8 +12,12 @@ import type { AddResult } from './bindings/AddResult';
 import type { AddSource } from './bindings/AddSource';
 import type { ConnectionSettings } from './bindings/ConnectionSettings';
 import type { FreeSpace } from './bindings/FreeSpace';
+import type { MappingView } from './bindings/MappingView';
 import type { Metainfo } from './bindings/Metainfo';
+import type { PathMapping } from './bindings/PathMapping';
+import type { Renamed } from './bindings/Renamed';
 import type { TorrentAction } from './bindings/TorrentAction';
+import type { TorrentSet } from './bindings/TorrentSet';
 import type { ConnectionState } from './bindings/ConnectionState';
 import type { Diff } from './bindings/Diff';
 import type { Problem } from './bindings/Problem';
@@ -31,13 +35,16 @@ export type {
   ConnectionState,
   Diff,
   FreeSpace,
+  MappingView,
   Metainfo,
+  PathMapping,
   Problem,
   Profile,
   SessionStats,
   TestResult,
   Torrent,
   TorrentAction,
+  TorrentSet,
 };
 
 /** A readable message from whatever a command rejected with (a Problem, a string, an Error). */
@@ -82,7 +89,27 @@ export const api = {
   addTorrents: (sources: AddSource[], options: AddOptions) => invoke<AddResult[]>('add_torrents', { sources, options }),
   addDefaults: () => invoke<AddDefaults>('add_defaults'),
   freeSpace: (path: string) => invoke<FreeSpace>('free_space', { path }),
+
+  /** Follow a torrent in the inspector (its details now, then `details` events); null stops. */
+  inspect: (hash: string | null) => invoke<Torrent | null>('inspect', { hash }),
+  /** Change options, files or labels. File lists are indices into `files`; empty lists are ignored. */
+  setTorrents: (hashes: string[], set: TorrentSet) => invoke<void>('set_torrents', { hashes, set }),
+  /** Rename the torrent (`path` its current name) or a file or folder in it (`path` as in its files). */
+  renameTorrent: (hash: string, path: string, name: string) => invoke<Renamed>('rename_torrent', { hash, path, name }),
+  /** Its name before it was renamed, when that's known and differs (else null). */
+  originalName: (hash: string) => invoke<string | null>('original_name', { hash }),
+  setLocation: (hashes: string[], location: string, moveData: boolean) =>
+    invoke<void>('set_location', { hashes, location, moveData }),
+  pathMappings: () => invoke<MappingView[]>('path_mappings'),
+  setPathMappings: (list: PathMapping[]) => invoke<MappingView[]>('set_path_mappings', { list }),
+  /** Open a torrent (or its file at index `file`) here, or reveal it, through the path mappings. */
+  openTorrent: (hash: string, file: number | null, reveal: boolean) =>
+    invoke<void>('open_torrent', { hash, file, reveal }),
 };
+
+export function onDetails(handler: (t: Torrent) => void): Promise<UnlistenFn> {
+  return listen<Torrent>('details', (e) => handler(e.payload));
+}
 
 export type DragDrop =
   { type: 'enter'; paths: string[] } | { type: 'over' } | { type: 'drop'; paths: string[] } | { type: 'leave' };

@@ -96,7 +96,8 @@ pub async fn read_torrent_file(path: String) -> Result<Metainfo, Problem> {
     transmission::read_metainfo(&bytes).map_err(|e| Problem::from(e.to_string()))
 }
 
-fn read_torrent_bytes(path: &Path) -> Result<Vec<u8>, Problem> {
+/// A .torrent file's bytes, refusing anything too big to be one.
+pub(crate) fn read_torrent_bytes(path: &Path) -> Result<Vec<u8>, Problem> {
     let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
     let size = std::fs::metadata(path).map_err(|e| Problem::from(format!("Couldn't read {name}: {e}")))?.len();
     if size > MAX_TORRENT_FILE {

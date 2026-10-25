@@ -389,8 +389,8 @@ function FileRow(props: { path: string; onRemove(): void }) {
   );
 }
 
-/** The host's default, favourites and recent folders, to choose from. */
-function FolderMenu(props: { defaultDir: string; onChoose(dir: string): void }) {
+/** The host's default (when given), favourites and recent folders, to choose from. */
+export function FolderMenu(props: { defaultDir: string; onChoose(dir: string): void }) {
   const recents = () => recentFolders().filter((d) => !favouriteFolders().includes(d) && d !== props.defaultDir);
   return (
     <Menu

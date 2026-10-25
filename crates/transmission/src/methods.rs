@@ -65,8 +65,11 @@ struct TorrentSetParams<'a> {
 }
 
 /// Changes to torrents (`torrent_set`): only the fields that are Some are sent.
-/// File lists are indices into the torrent's `files`; an empty list means every file.
-#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+/// File lists are indices into the torrent's `files`; an empty list means every file
+/// (see [`TorrentSet::without_empty_file_lists`]).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export, optional_fields))]
+#[serde(default)]
 pub struct TorrentSet {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bandwidth_priority: Option<Priority>,
@@ -115,6 +118,25 @@ pub struct TorrentSet {
     pub upload_limit: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub upload_limited: Option<bool>,
+}
+
+impl TorrentSet {
+    /// The same changes, minus any empty file list: Transmission reads an empty
+    /// list as every file, which is never what a change from the UI means.
+    pub fn without_empty_file_lists(mut self) -> Self {
+        for list in [
+            &mut self.files_wanted,
+            &mut self.files_unwanted,
+            &mut self.priority_high,
+            &mut self.priority_low,
+            &mut self.priority_normal,
+        ] {
+            if list.as_ref().is_some_and(Vec::is_empty) {
+                *list = None;
+            }
+        }
+        self
+    }
 }
 
 /// Where a new torrent comes from.
@@ -200,6 +222,7 @@ struct AddResult {
 
 /// `torrent_rename_path`'s answer.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(default)]
 pub struct Renamed {
     pub id: i64,
@@ -346,6 +369,29 @@ mod tests {
             serde_json::to_string(&IdsParams { ids: &Ids::RecentlyActive }).unwrap(),
             r#"{"ids":"recently_active"}"#
         );
+    }
+
+    #[test]
+    fn empty_file_lists_are_dropped() {
+        let set = TorrentSet {
+            files_wanted: Some(vec![]),
+            files_unwanted: Some(vec![2]),
+            priority_high: Some(vec![]),
+            ..Default::default()
+        }
+        .without_empty_file_lists();
+        assert_eq!(set.files_wanted, None, "empty would mean every file");
+        assert_eq!(set.files_unwanted, Some(vec![2]));
+        assert_eq!(set.priority_high, None);
+    }
+
+    #[test]
+    fn torrent_set_reads_what_the_ui_sends() {
+        let set: TorrentSet =
+            serde_json::from_str(r#"{"seed_ratio_mode":1,"seed_ratio_limit":2.5,"bandwidth_priority":-1}"#).unwrap();
+        assert_eq!(set.seed_ratio_mode, Some(LimitMode::Single));
+        assert_eq!(set.bandwidth_priority, Some(Priority::Low));
+        assert_eq!(set.labels, None);
     }
 
     #[test]

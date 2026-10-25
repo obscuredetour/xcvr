@@ -4,7 +4,9 @@
 //!
 //! - `connection` ([`ConnectionState`]) when the state changes,
 //! - `torrents` ([`transmission::Diff`]) when the list changes,
-//! - `stats` ([`transmission::SessionStats`]) when the speeds or counts change.
+//! - `stats` ([`transmission::SessionStats`]) when the speeds or counts change,
+//! - `details` ([`transmission::Torrent`], every DETAIL field) when the torrent
+//!   the inspector follows changes (see [`Poller::follow`]).
 //!
 //! Every poll fetches every torrent's list fields (tens of torrents makes that
 //! cheap), so there's no `recently_active` bookkeeping to go stale.
@@ -21,6 +23,7 @@ use ts_rs::TS;
 pub const CONNECTION_EVENT: &str = "connection";
 pub const TORRENTS_EVENT: &str = "torrents";
 pub const STATS_EVENT: &str = "stats";
+pub const DETAILS_EVENT: &str = "details";
 
 /// How often to poll while the window is showing, and while it's hidden or minimized.
 const VISIBLE_INTERVAL: Duration = Duration::from_millis(1500);
@@ -83,6 +86,9 @@ struct Shared {
     snapshot: Mutex<Snapshot>,
     stats: Mutex<Option<SessionStats>>,
     client: Mutex<Option<Arc<Client>>>,
+    /// The torrent the inspector shows (by hash), and its details as last sent.
+    followed: Mutex<Option<String>>,
+    details: Mutex<Option<Torrent>>,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -129,6 +135,14 @@ impl Poller {
     /// The connected client, for commands (start, stop, add…).
     pub fn client(&self) -> Option<Arc<Client>> {
         lock(&self.shared.client).clone()
+    }
+
+    /// Follow one torrent's details (files, peers, trackers, options) on every poll,
+    /// as `details` events; None stops. `current` is what the caller just fetched, so
+    /// the next event is only a change from it.
+    pub fn follow(&self, hash: Option<String>, current: Option<Torrent>) {
+        *lock(&self.shared.followed) = hash;
+        *lock(&self.shared.details) = current;
     }
 }
 
@@ -207,6 +221,8 @@ impl<R: Runtime> Task<R> {
         self.failures = 0;
         lock(&self.shared.snapshot).clear();
         *lock(&self.shared.stats) = None;
+        *lock(&self.shared.followed) = None;
+        *lock(&self.shared.details) = None;
         // The old host's torrents go from the UI straight away.
         let _ = self.app.emit(TORRENTS_EVENT, Diff { reset: true, ..Diff::default() });
 
@@ -254,6 +270,22 @@ impl<R: Runtime> Task<R> {
         if changed {
             let _ = self.app.emit(STATS_EVENT, &stats);
             *lock(&self.shared.stats) = Some(stats);
+        }
+
+        // The inspector's torrent, in full. A failure here isn't a lost connection
+        // (the list just came back), so it's skipped until the next poll.
+        let followed = lock(&self.shared.followed).clone();
+        if let Some(hash) = followed
+            && let Ok(got) = client.torrent_get(&Ids::hashes([hash.as_str()]), TorrentField::DETAIL).await
+            && let Some(details) = got.torrents.into_iter().next()
+            // Still the one followed (the inspector may have moved on while this was asked).
+            && lock(&self.shared.followed).as_deref() == Some(hash.as_str())
+        {
+            let mut last = lock(&self.shared.details);
+            if last.as_ref() != Some(&details) {
+                let _ = self.app.emit(DETAILS_EVENT, &details);
+                *last = Some(details);
+            }
         }
         Ok(())
     }
@@ -377,6 +409,9 @@ mod tests {
             let raw: Raw = serde_json::from_str(e.payload()).unwrap();
             lock(&seen).push(Diff { reset: raw.reset, added: raw.added, removed: raw.removed, ..Diff::default() });
         });
+        let details: Arc<Mutex<Vec<Torrent>>> = Arc::default();
+        let seen_details = details.clone();
+        app.listen_any(DETAILS_EVENT, move |e| lock(&seen_details).push(serde_json::from_str(e.payload()).unwrap()));
 
         let poller = Poller::start(app.handle().clone());
         assert_eq!(poller.state(), ConnectionState::NotConfigured);
@@ -401,6 +436,14 @@ mod tests {
             lock(&diffs).iter().any(|d| d.added.iter().any(|t| t.hash_string.as_deref() == Some(&hash)))
         })
         .await;
+
+        // Followed by the inspector: its details arrive, with the inspector's fields.
+        poller.follow(Some(hash.clone()), None);
+        poller.poll_now();
+        until("details", || lock(&details).iter().any(|t| t.hash_string.as_deref() == Some(&hash))).await;
+        let d = lock(&details).last().cloned().unwrap();
+        assert!(d.tracker_stats.is_some() && d.peers.is_some() && d.files.is_some() && d.seed_ratio_mode.is_some());
+        poller.follow(None, None);
 
         // Removed elsewhere: a removed diff.
         other.torrent_remove(&Ids::hashes([hash.as_str()]), false).await.unwrap();

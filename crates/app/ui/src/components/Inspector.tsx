@@ -1,32 +1,37 @@
-import { For, Show } from 'solid-js';
+import { For, Match, Show, Switch } from 'solid-js';
+import Ellipsis from 'lucide-solid/icons/ellipsis';
+import FolderOpen from 'lucide-solid/icons/folder-open';
+import SquareArrowOutUpRight from 'lucide-solid/icons/square-arrow-out-up-right';
 import X from 'lucide-solid/icons/x';
 
-import type { Torrent } from '../api';
-import {
-  formatDateTime,
-  formatPercent,
-  formatRatio,
-  formatSize,
-  formatSpeed,
-  progressOf,
-  statusLabel,
-} from '../format';
+import { act, copyMagnets, openHere, remove, renameTorrent, setLocation } from '../actions';
+import { smallButton } from '../buttons';
+import { formatEta, formatPercent, formatSize, progressOf, statusLabel, statusTone } from '../format';
+import { details, type InspectorTab, inspectorTab, setInspectorTab } from '../inspector';
+import { keys } from '../keys';
 import { selectedHash, selectedHashes } from '../selection';
 import { torrent } from '../torrents';
 import { INSPECTOR_WIDTH, inspectorWidth, setInspectorWidth } from '../view';
 import { widthFlags } from '../widths';
 import { Icon } from './Icon';
+import { FilesTab } from './inspector/Files';
+import { GeneralTab } from './inspector/General';
+import { OptionsTab } from './inspector/Options';
+import { PeersTab } from './inspector/Peers';
+import { TrackersTab } from './inspector/Trackers';
+import { Menu, MenuItem, MenuSeparator } from './Menu';
 
 /**
- * The right sidebar: the selected torrent's details, files, peers, trackers
- * and options (phase 6). Resizable from its left edge, like Magnitide's
- * details panel.
+ * The right sidebar: the selected torrent in full, in tabs (General, Files,
+ * Peers, Trackers, Options), with Open and Reveal. Resizable from its left
+ * edge, like Magnitide's details panel. Several selected: what can be done to
+ * them together.
  */
 export function Inspector(props: { onClose(): void }) {
   return (
     <aside
       ref={(el) => widthFlags(el, { wide: 416 })}
-      class="group/inspector relative flex-none animate-slide-in border-l border-line bg-panel select-text max-[760px]:absolute max-[760px]:inset-y-0 max-[760px]:right-0 max-[760px]:w-[min(28rem,100%-2rem)]! max-[760px]:max-w-full! max-[760px]:shadow-lift"
+      class="group/inspector relative flex flex-none animate-slide-in flex-col border-l border-line bg-panel select-text max-[760px]:absolute max-[760px]:inset-y-0 max-[760px]:right-0 max-[760px]:w-[min(28rem,100%-2rem)]! max-[760px]:max-w-full! max-[760px]:shadow-lift"
       // The table keeps at least 320px beside it.
       style={{ width: `${inspectorWidth()}px`, 'max-width': 'calc(100% - 320px)' }}
       aria-label="Inspector"
@@ -34,74 +39,169 @@ export function Inspector(props: { onClose(): void }) {
       <ResizeHandle />
       <button
         class="absolute top-2.5 right-2.5 z-1 grid size-7 place-items-center rounded-full hover:bg-hover"
-        title="Close"
+        title={`Close (${keys('mod+I')})`}
         aria-label="Close inspector"
         onClick={() => props.onClose()}
       >
         <Icon of={X} class="text-muted" />
       </button>
-      <Show
-        when={selectedHashes().size > 1}
-        fallback={
-          <Show
-            when={torrent(selectedHash() ?? '')}
-            fallback={
-              <div class="grid h-full place-items-center p-6 text-center text-sm text-muted">Select a torrent</div>
-            }
-          >
-            {(t) => <Summary t={t()} />}
+      <Switch fallback={<Empty text="Select a torrent" />}>
+        <Match when={selectedHashes().size > 1}>
+          <Several count={selectedHashes().size} />
+        </Match>
+        <Match when={selectedHash() && torrent(selectedHash()!)}>
+          <Show when={details()} fallback={<Empty text="Loading…" />}>
+            <One />
           </Show>
-        }
-      >
-        <div class="grid h-full place-items-center p-6 text-center text-sm text-muted">
-          {selectedHashes().size} torrents selected
-        </div>
-      </Show>
+        </Match>
+      </Switch>
     </aside>
   );
 }
 
-/** The basics of one torrent. Files, peers, trackers and options join it in the full inspector. */
-function Summary(props: { t: Torrent }) {
-  const t = () => props.t;
-  const rows = (): [string, string][] => [
-    ['Status', statusLabel(t())],
-    ['Progress', `${formatPercent(progressOf(t()))} of ${formatSize(t().size_when_done ?? 0)}`],
-    ['Downloading', t().rate_download ? formatSpeed(t().rate_download!) : '–'],
-    ['Uploading', t().rate_upload ? formatSpeed(t().rate_upload!) : '–'],
-    ['Ratio', formatRatio(t().upload_ratio)],
-    ['Uploaded', formatSize(t().uploaded_ever ?? 0)],
-    ['Added', formatDateTime(t().added_date)],
-    ['Completed', formatDateTime(t().done_date) || '–'],
-    ['Location', t().download_dir ?? ''],
-  ];
+function Empty(props: { text: string }) {
+  return <div class="grid flex-1 place-items-center p-6 text-center text-sm text-muted">{props.text}</div>;
+}
+
+const TABS: { id: InspectorTab; label: string }[] = [
+  { id: 'general', label: 'General' },
+  { id: 'files', label: 'Files' },
+  { id: 'peers', label: 'Peers' },
+  { id: 'trackers', label: 'Trackers' },
+  { id: 'options', label: 'Options' },
+];
+
+const TONE_BG = { download: 'bg-down', seed: 'bg-up', idle: 'bg-faint', check: 'bg-info', error: 'bg-danger' };
+
+/** One torrent: who it is, how far along, the tabs. */
+function One() {
+  const t = () => details()!;
+  const hash = () => t().hash_string!;
+  const count = (id: InspectorTab) =>
+    id === 'files'
+      ? t().files?.length
+      : id === 'peers'
+        ? t().peers?.length
+        : id === 'trackers'
+          ? t().tracker_stats?.length
+          : undefined;
+
   return (
-    <div class="h-full overflow-y-auto p-5 pr-12">
-      <h2 class="text-[15px]/snug font-semibold break-words">{t().name}</h2>
-      <Show when={(t().error ?? 0) > 0 && t().error_string}>
-        {(msg) => (
-          <p class="mt-2 text-xs" classList={{ 'text-warning': t().error === 1, 'text-danger': (t().error ?? 0) >= 2 }}>
-            {msg()}
-          </p>
-        )}
-      </Show>
-      <Show when={t().labels?.length}>
-        <div class="mt-2 flex flex-wrap gap-1">
-          <For each={t().labels}>
-            {(label) => <span class="rounded-chip bg-element px-1.5 text-[11px] font-medium text-muted">{label}</span>}
-          </For>
+    <>
+      <header class="border-b border-line px-5 pt-4 pb-3">
+        <h2 class="pr-8 text-[15px]/snug font-semibold break-words">{t().name}</h2>
+        <div class="mt-1 flex items-center gap-1.5 text-xs text-muted">
+          <span class={`size-1.5 rounded-full ${TONE_BG[statusTone(t())]}`} aria-hidden="true" />
+          {statusLabel(t())} · {formatPercent(progressOf(t()))} of {formatSize(t().size_when_done ?? 0)}
+          <Show when={formatEta(t())}>{(eta) => <> · {eta()} left</>}</Show>
         </div>
-      </Show>
-      <dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-xs">
-        <For each={rows()}>
-          {([label, value]) => (
-            <>
-              <dt class="text-muted">{label}</dt>
-              <dd class="min-w-0 break-words tabular-nums">{value}</dd>
-            </>
+        <Show when={(t().error ?? 0) > 0 && t().error_string}>
+          {(msg) => (
+            <p
+              class="mt-1.5 text-xs"
+              classList={{ 'text-warning': t().error === 1, 'text-danger': (t().error ?? 0) >= 2 }}
+            >
+              {msg()}
+            </p>
+          )}
+        </Show>
+        <div class="mt-3 flex flex-wrap items-center gap-1.5">
+          <button class={smallButton} title={keys('mod+ArrowDown')} onClick={() => void openHere(hash(), null, false)}>
+            <Icon of={SquareArrowOutUpRight} size={12} />
+            Open
+          </button>
+          <button class={smallButton} title={keys('mod+R')} onClick={() => void openHere(hash(), null, true)}>
+            <Icon of={FolderOpen} size={12} />
+            Reveal
+          </button>
+          <Menu
+            label="More"
+            iconOnly
+            buttonClass="grid size-7 place-items-center rounded-button text-muted hover:bg-hover hover:text-fg aria-expanded:bg-hover"
+            button={<Icon of={Ellipsis} size={16} />}
+          >
+            <MenuItem shortcut={keys('F2')} onSelect={() => renameTorrent(hash())}>
+              Rename…
+            </MenuItem>
+            <MenuItem shortcut={keys('mod+L')} onSelect={() => setLocation([hash()])}>
+              Set Location…
+            </MenuItem>
+            <MenuSeparator />
+            <MenuItem onSelect={() => void act('verify', [hash()])}>Verify Local Data</MenuItem>
+            <MenuItem onSelect={() => void copyMagnets([hash()])}>Copy Magnet Link</MenuItem>
+          </Menu>
+        </div>
+      </header>
+
+      <div class="flex gap-0.5 border-b border-line px-3" role="tablist" aria-label="Inspector">
+        <For each={TABS}>
+          {(tab) => (
+            <button
+              role="tab"
+              aria-selected={inspectorTab() === tab.id}
+              class="relative flex h-9 items-center gap-1 px-2 text-xs font-medium text-muted hover:text-fg aria-selected:text-fg"
+              onClick={() => setInspectorTab(tab.id)}
+            >
+              {tab.label}
+              <Show when={count(tab.id)}>
+                {(n) => <span class="rounded-chip bg-element px-1.5 text-[10px] tabular-nums">{n()}</span>}
+              </Show>
+              <Show when={inspectorTab() === tab.id}>
+                <span class="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-accent" aria-hidden="true" />
+              </Show>
+            </button>
           )}
         </For>
-      </dl>
+      </div>
+
+      <div class="min-h-0 flex-1 overflow-y-auto" role="tabpanel">
+        <Switch>
+          <Match when={inspectorTab() === 'general'}>
+            <GeneralTab t={t()} />
+          </Match>
+          <Match when={inspectorTab() === 'files'}>
+            <FilesTab t={t()} />
+          </Match>
+          <Match when={inspectorTab() === 'peers'}>
+            <PeersTab t={t()} />
+          </Match>
+          <Match when={inspectorTab() === 'trackers'}>
+            <TrackersTab t={t()} />
+          </Match>
+          <Match when={inspectorTab() === 'options'}>
+            <OptionsTab t={t()} />
+          </Match>
+        </Switch>
+      </div>
+    </>
+  );
+}
+
+/** Several selected: their totals, and what can be done to them together. */
+function Several(props: { count: number }) {
+  const ts = () => [...selectedHashes()].map((h) => torrent(h)).filter((t) => t !== undefined);
+  const size = () => ts().reduce((n, t) => n + (t.size_when_done ?? 0), 0);
+  const done = () => ts().reduce((n, t) => n + (t.size_when_done ?? 0) - (t.left_until_done ?? 0), 0);
+  return (
+    <div class="p-5 pr-12">
+      <h2 class="text-[15px] font-semibold">{props.count} torrents</h2>
+      <p class="mt-1 text-xs text-muted">
+        {formatSize(done())} of {formatSize(size())} downloaded
+      </p>
+      <div class="mt-4 flex flex-wrap gap-1.5">
+        <button class={smallButton} onClick={() => void act('start')}>
+          Resume
+        </button>
+        <button class={smallButton} onClick={() => void act('stop')}>
+          Pause
+        </button>
+        <button class={smallButton} onClick={() => setLocation()}>
+          Set Location…
+        </button>
+        <button class={`${smallButton} text-danger`} onClick={() => void remove(false)}>
+          Remove…
+        </button>
+      </div>
     </div>
   );
 }

@@ -2,8 +2,11 @@
 
 mod actions;
 mod commands;
+mod inspect;
+mod mappings;
 #[cfg(target_os = "macos")]
 mod menu;
+mod originals;
 mod poller;
 mod profiles;
 mod secrets;
@@ -37,6 +40,8 @@ fn main() {
             let active = profiles.active();
             app.manage(secrets.clone());
             app.manage(profiles);
+            app.manage(mappings::Mappings::load(dir.join("paths.json")));
+            app.manage(originals::Originals::load(dir.join("originals.json")));
             app.manage(Poller::start(app.handle().clone()));
 
             // Connect to the saved host. Its password comes from the keychain, off the
@@ -67,6 +72,14 @@ fn main() {
             actions::add_torrents,
             actions::add_defaults,
             actions::free_space,
+            inspect::inspect,
+            inspect::set_torrents,
+            inspect::rename_torrent,
+            inspect::original_name,
+            inspect::set_location,
+            inspect::path_mappings,
+            inspect::set_path_mappings,
+            inspect::open_torrent,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Transceiver");
