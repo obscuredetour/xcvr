@@ -24,7 +24,36 @@ pub struct TrayItems<R: Runtime> {
     turtle: CheckMenuItem<R>,
 }
 
+/// Linux trays need libayatana-appindicator (or the older libappindicator), loaded at run
+/// time; building the tray without it panics. Arch: `pacman -S libayatana-appindicator`.
+#[cfg(target_os = "linux")]
+pub fn available() -> bool {
+    ["libayatana-appindicator3.so.1", "libappindicator3.so.1"]
+        .iter()
+        // SAFETY: loading a system library runs its initialisers, as the tray would anyway.
+        .any(|name| unsafe { libloading::Library::new(name) }.is_ok())
+}
+
+#[cfg(not(target_os = "linux"))]
+pub fn available() -> bool {
+    true
+}
+
+/// Why there's no tray icon, for Settings › General.
+pub const MISSING_NOTE: &str = "No tray icon: the system tray library isn't installed, so closing the window quits \
+     Transceiver. Install libayatana-appindicator (on Arch: sudo pacman -S libayatana-appindicator) and \
+     restart Transceiver.";
+
+/// Whether the tray icon is there (so closing the window can leave the app running).
+pub fn is_shown<R: Runtime>(app: &AppHandle<R>) -> bool {
+    app.try_state::<TrayItems<R>>().is_some()
+}
+
+/// Build the tray, unless its library is missing (Linux).
 pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
+    if !available() {
+        return Ok(());
+    }
     let speeds = MenuItem::with_id(app, "speeds", "Not connected", false, None::<&str>)?;
     let counts = MenuItem::with_id(app, "counts", "", false, None::<&str>)?;
     let turtle = CheckMenuItem::with_id(app, "turtle", "Slower Speeds", true, false, None::<&str>)?;

@@ -118,10 +118,11 @@ fn main() {
             }
             Ok(())
         })
-        // Closing the window keeps the app in the menu bar / tray (Settings › General).
+        // Closing the window keeps the app in the menu bar / tray (Settings › General), if it has one.
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event
                 && window.app_handle().state::<Settings>().get().keep_running
+                && tray::is_shown(window.app_handle())
             {
                 api.prevent_close();
                 let _ = window.hide();

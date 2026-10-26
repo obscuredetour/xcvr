@@ -9,4 +9,8 @@ shortcut: string,
 /**
  * Why the shortcut can't be used here, and what to do instead.
  */
-shortcutNote: string | null, };
+shortcutNote: string | null, 
+/**
+ * Why there's no tray icon (Linux, without its library), and what to do.
+ */
+trayNote: string | null, };

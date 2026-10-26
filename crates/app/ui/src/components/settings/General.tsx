@@ -52,10 +52,18 @@ export function GeneralSettings() {
               >
                 <Toggle
                   label={`Keep running in the ${trayName}`}
-                  checked={g().settings.keepRunning}
+                  checked={g().settings.keepRunning && !g().trayNote}
+                  disabled={!!g().trayNote}
                   onChange={(keepRunning) => change({ keepRunning })}
                 />
               </Row>
+              <Show when={g().trayNote}>
+                {(note) => (
+                  <Callout icon={CircleAlert} tone="warning" class="mt-3">
+                    {note()}
+                  </Callout>
+                )}
+              </Show>
             </Group>
 
             <Group title="Notifications">

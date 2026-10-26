@@ -193,7 +193,7 @@ Each phase ends with something runnable on both the Mac and the CachyOS machine.
 
 **11. Packaging**
 - macOS: `.app` / `.dmg`, unsigned.
-- CachyOS: `packaging/arch/PKGBUILD` building from the local checkout, installing the `.desktop` with `MimeType=x-scheme-handler/magnet;application/x-bittorrent;`.
+- CachyOS: `packaging/arch/PKGBUILD` building from the local checkout, installing the `.desktop` with `MimeType=x-scheme-handler/magnet;application/x-bittorrent;`. Depends on `libayatana-appindicator` for the tray (loaded at run time; without it the app runs with no tray icon, and Settings › General says so).
 - Optional: GitHub Actions checks (Linux), like Magnitide's.
 
 MVP = phases 1–9. Phase 10 and the brief's "Later" items (multiple host profiles UI, saved filters, tracker editing) follow.

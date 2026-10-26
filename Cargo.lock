@@ -6018,6 +6018,7 @@ version = "0.1.0"
 dependencies = [
  "glib",
  "keyring",
+ "libloading",
  "rust-ini",
  "serde",
  "serde_json",

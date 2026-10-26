@@ -29,6 +29,8 @@ pub struct GeneralSettings {
     pub shortcut: String,
     /// Why the shortcut can't be used here, and what to do instead.
     pub shortcut_note: Option<String>,
+    /// Why there's no tray icon (Linux, without its library), and what to do.
+    pub tray_note: Option<String>,
 }
 
 /// The global-shortcut plugin, with the handler that shows the window.
@@ -67,6 +69,7 @@ fn view<R: Runtime>(app: &AppHandle<R>, settings: AppSettings) -> GeneralSetting
         launch_at_login: app.autolaunch().is_enabled().unwrap_or(false),
         shortcut: "mod+alt+X".into(),
         shortcut_note,
+        tray_note: (!crate::tray::is_shown(app)).then(|| crate::tray::MISSING_NOTE.to_owned()),
         settings,
     }
 }
