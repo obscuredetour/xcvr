@@ -8,4 +8,8 @@ members = ["crates/*"]
 version = "0.1.0"
 
 [profile.release]
+# Line tables, then the debug info stripped from the binary: backtraces keep
+# their function names, and the Linux packages (which, unlike the macOS app,
+# would carry the debug info inside the binary) stay small.
 debug = "line-tables-only"
+strip = "debuginfo"

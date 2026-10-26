@@ -18,6 +18,7 @@ mod profiles;
 mod secrets;
 mod settings;
 mod tray;
+mod updates;
 
 use std::path::Path;
 use std::sync::Arc;
@@ -58,6 +59,7 @@ fn main() {
         .plugin(general::shortcut_plugin())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let dir = app.path().app_config_dir()?;
             let secrets = Arc::new(Secrets::new(dir.join("secrets.json")));
@@ -69,6 +71,7 @@ fn main() {
             app.manage(profiles);
             app.manage(settings);
             app.manage(Inbox::default());
+            app.manage(updates::Pending::default());
             app.manage(mappings::Mappings::load(dir.join("paths.json")));
             app.manage(originals::Originals::load(dir.join("originals.json")));
             app.manage(inspect::CopyNames::default());
@@ -167,6 +170,11 @@ fn main() {
             general::general_settings,
             general::set_general_settings,
             general::set_launch_at_login,
+            updates::update_status,
+            updates::set_auto_update,
+            updates::check_for_update,
+            updates::install_update,
+            updates::open_release_notes,
         ])
         .build(tauri::generate_context!())
         .expect("error while starting Transceiver");

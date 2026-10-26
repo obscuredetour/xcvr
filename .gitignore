@@ -1,7 +1,9 @@
 /target
 .DS_Store
 
-# makepkg's downloads, build directories and packages, from building the Arch package locally
-/packaging/arch/src/
-/packaging/arch/pkg/
-/packaging/arch/*.pkg.tar.*
+# makepkg's downloads, build folders and packages, from installing the Arch package from its folder
+/packaging/aur/transceiver-bin/src/
+/packaging/aur/transceiver-bin/pkg/
+/packaging/aur/transceiver-bin/*.deb
+/packaging/aur/transceiver-bin/LICENSE-*
+/packaging/aur/transceiver-bin/*.pkg.tar.*

@@ -196,6 +196,13 @@ Each phase ends with something runnable on both the Mac and the CachyOS machine.
 - macOS: `.app` / `.dmg`, unsigned.
 - CachyOS: `packaging/arch/PKGBUILD` building from the local checkout, installing the `.desktop` with `MimeType=x-scheme-handler/magnet;application/x-bittorrent;`. Depends on `libayatana-appindicator` for the tray (loaded at run time; without it the app runs with no tray icon, and Settings › General says so).
 - Optional: GitHub Actions checks (Linux), like Magnitide's.
+- Done (ported from Magnitide's setup):
+  - **Releases (`.github/workflows/release.yml`):** a `v<version>` tag builds macOS (Apple silicon and Intel `.dmg`s, ad-hoc signed: no Apple Developer ID, so Gatekeeper asks once) and Linux (`.AppImage`, `.deb`, `.rpm`, on Ubuntu 22.04 for an older glibc) into a draft release. The tag must match the version in `Cargo.toml` and `package.json`. No Windows yet: untested.
+  - **Updater (`updates.rs`, Settings › About):** checks the latest release's `latest.json` soon after launch and daily (can be turned off), a toast when it finds one, and Update and Restart. Installers are signed with the updater key (a repository secret; its public half is in `tauri.conf.json`). Copies a package manager owns (the Arch package) and source builds say so instead. `docs/releasing.md` has the steps. The updater uses the system's TLS (native-tls), not its default rustls: that turns on rustls in the reqwest the Transmission client shares, with no crypto provider, and every client panicked when created (found by building a release and running it).
+  - **Arch (`packaging/aur/transceiver-bin`):** the release `.deb` repackaged, with `.SRCINFO` and `scripts/aur-update.sh` for each release. The AUR isn't taking registrations, so for now it installs from the folder with `makepkg -si`. Checked in an Arch container with namcap.
+  - **Checks (`.github/workflows/checks.yml`):** fmt, clippy, tests and the container suite, and the UI's lint and build, on pushes to `main` and pull requests.
+  - **Names:** the binary Cargo builds is `Transceiver`, so a dev run (no app bundle) shows that in the Dock; packaging renames it to `xcvr` (`mainBinaryName`), the installed command and the Linux desktop entry's `Exec`.
+  - **Smaller Linux packages:** release builds strip their debug info (keeping symbol names), so the `.deb` went from 33 MB to 9 MB.
 
 MVP = phases 1–9. Phase 10 and the brief's "Later" items (multiple host profiles UI, saved filters, tracker editing) follow.
 

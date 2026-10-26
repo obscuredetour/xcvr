@@ -25,6 +25,9 @@ import type { SessionSet } from './bindings/SessionSet';
 import type { TorrentAction } from './bindings/TorrentAction';
 import type { TorrentSet } from './bindings/TorrentSet';
 import type { TorrentsFolder } from './bindings/TorrentsFolder';
+import type { UpdateInfo } from './bindings/UpdateInfo';
+import type { UpdateProgress } from './bindings/UpdateProgress';
+import type { UpdateStatus } from './bindings/UpdateStatus';
 import type { ConnectionState } from './bindings/ConnectionState';
 import type { Diff } from './bindings/Diff';
 import type { Problem } from './bindings/Problem';
@@ -59,6 +62,9 @@ export type {
   TorrentAction,
   TorrentSet,
   TorrentsFolder,
+  UpdateInfo,
+  UpdateProgress,
+  UpdateStatus,
 };
 
 /** A readable message from whatever a command rejected with (a Problem, a string, an Error). */
@@ -146,11 +152,25 @@ export const api = {
   generalSettings: () => invoke<GeneralSettings>('general_settings'),
   setGeneralSettings: (next: AppSettings) => invoke<GeneralSettings>('set_general_settings', { next }),
   setLaunchAtLogin: (on: boolean) => invoke<GeneralSettings>('set_launch_at_login', { on }),
+
+  /** Whether this copy updates itself, and whether it checks on its own. */
+  updateStatus: () => invoke<UpdateStatus>('update_status'),
+  setAutoUpdate: (on: boolean) => invoke<UpdateStatus>('set_auto_update', { on }),
+  /** A newer version, or null when this is the latest. */
+  checkForUpdate: () => invoke<UpdateInfo | null>('check_for_update'),
+  /** Download and install the version the last check found, then restart (`update-progress` events meanwhile). */
+  installUpdate: () => invoke<void>('install_update'),
+  openReleaseNotes: (version: string) => invoke<void>('open_release_notes', { version }),
 };
 
 /** Something arrived from outside (a magnet clicked, a .torrent opened): `takeInbox` has it. */
 export function onInbox(handler: () => void): Promise<UnlistenFn> {
   return listen('inbox', handler);
+}
+
+/** How far an update's download and install have got. */
+export function onUpdateProgress(handler: (p: UpdateProgress) => void): Promise<UnlistenFn> {
+  return listen<UpdateProgress>('update-progress', (e) => handler(e.payload));
 }
 
 /** A short message from the menu bar / tray, which has no UI of its own. */

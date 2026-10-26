@@ -6,8 +6,14 @@
   "build": {
     "devUrl": "http://localhost:1420",
     "frontendDist": "ui/dist",
-    "beforeDevCommand": { "script": "pnpm dev", "cwd": "ui" },
-    "beforeBuildCommand": { "script": "pnpm build", "cwd": "ui" }
+    "beforeDevCommand": {
+      "script": "pnpm dev",
+      "cwd": "ui"
+    },
+    "beforeBuildCommand": {
+      "script": "pnpm build",
+      "cwd": "ui"
+    }
   },
   "app": {
     "windows": [
@@ -20,7 +26,10 @@
         "visible": false,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
-        "trafficLightPosition": { "x": 16, "y": 24 }
+        "trafficLightPosition": {
+          "x": 16,
+          "y": 24
+        }
       }
     ],
     "security": {
@@ -29,15 +38,31 @@
   },
   "plugins": {
     "deep-link": {
-      "desktop": { "schemes": ["magnet"] }
+      "desktop": {
+        "schemes": [
+          "magnet"
+        ]
+      }
+    },
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQxNkFCQjMxRjNGNDZCOUIKUldTYmEvVHpNYnRxMFhsY2phZWhoV00xY3ZyTmliL3QvVGlkcFVVSnd1MnQ3RHBSL2pCbXUrbm8K",
+      "endpoints": [
+        "https://github.com/obscuredetour/xcvr/releases/latest/download/latest.json"
+      ]
     }
   },
   "bundle": {
     "active": true,
     "category": "Utility",
+    "shortDescription": "A desktop client for Transmission",
+    "longDescription": "Transceiver connects to a Transmission running on another computer (a NAS, a home server or a seedbox) and gives it a native desktop app: a live table of torrents, an inspector, labels and folders, and a menu bar or tray icon.",
+    "homepage": "https://github.com/obscuredetour/xcvr",
+    "publisher": "obscuredetour",
     "fileAssociations": [
       {
-        "ext": ["torrent"],
+        "ext": [
+          "torrent"
+        ],
         "name": "BitTorrent Document",
         "description": "BitTorrent Document",
         "mimeType": "application/x-bittorrent",
@@ -46,12 +71,22 @@
       }
     ],
     "linux": {
-      "deb": { "desktopTemplate": "linux/xcvr.desktop" },
-      "rpm": { "desktopTemplate": "linux/xcvr.desktop" }
+      "deb": {
+        "desktopTemplate": "linux/xcvr.desktop"
+      },
+      "rpm": {
+        "desktopTemplate": "linux/xcvr.desktop"
+      }
     },
     "macOS": {
       "minimumSystemVersion": "13.0"
     },
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
   }
 }

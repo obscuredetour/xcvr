@@ -2,9 +2,16 @@
 name = "xcvr"
 version.workspace = true
 edition = "2024"
-description = "Transceiver: a desktop client for Transmission"
+description = "A desktop client for Transmission"
 license = "MIT"
 publish = false
+
+# The program as built: "Transceiver", so a dev run (a bare binary, no app bundle) shows that name
+# in the Dock and the app switcher. Packaging renames it to "xcvr" (mainBinaryName in
+# tauri.conf.json), the command it's installed as.
+[[bin]]
+name = "Transceiver"
+path = "src/main.rs"
 
 [dependencies]
 # The RPC password in the system keychain (macOS Keychain, the Secret Service on Linux); see secrets.rs.
@@ -22,6 +29,10 @@ tauri-plugin-global-shortcut = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-opener = { version = "2", default-features = false }
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+# The system's TLS (macOS's own, OpenSSL on Linux) rather than its default rustls, which turns
+# on rustls in the reqwest the Transmission client shares without a crypto provider, so making a
+# client panics until the updater has first checked for updates.
+tauri-plugin-updater = { version = "2", default-features = false, features = ["native-tls", "system-proxy", "zip"] }
 tokio = { version = "1.54.1", features = ["macros", "sync", "time"] }
 transmission = { path = "../transmission", features = ["ts"] }
 ts-rs = { version = "12.0.1", features = ["no-serde-warnings"] }

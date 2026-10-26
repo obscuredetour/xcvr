@@ -20,6 +20,7 @@ import { QuestionHost } from './question';
 import { pruneSelection, select, selectAll, selectedHash, selectedHashes, selectRange } from './selection';
 import { Toast, toast } from './toast';
 import { watchOriginals } from './originals';
+import { scheduleUpdateChecks } from './updates';
 import { torrent, watchTorrents } from './torrents';
 import { inspectorOpen, setInspectorOpen, setSidebarOpen, sidebarOpen } from './view';
 import { resetZoom, stepZoom } from './zoom';
@@ -179,6 +180,8 @@ export function App() {
     watchInspector();
     // Original names, for two-line rows.
     watchOriginals();
+    // A newer version, soon after launch and once a day.
+    scheduleUpdateChecks();
   });
 
   // Selected torrents that are gone (removed, or another host) stop being selected.

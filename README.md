@@ -52,7 +52,17 @@ Windows isn't supported yet.
 
 ## Install
 
-There are no downloads yet, so for now Transceiver is built from source (below).
+Download it from the [latest release](https://github.com/obscuredetour/xcvr/releases/latest):
+
+- **macOS:** the `aarch64.dmg` for Apple silicon, or the `x64.dmg` for Intel. Transceiver isn't
+  notarized by Apple, so the first time you open it, macOS says it can't verify it: open System
+  Settings › Privacy & Security and choose **Open Anyway**.
+- **Linux:** the `.AppImage`, or the `.deb` or `.rpm` for your distribution.
+- **Arch Linux and CachyOS:** a `PKGBUILD` in [packaging/aur](packaging/aur/README.md) installs the
+  release with `makepkg -si`.
+
+Installed from these, Transceiver keeps itself up to date (Settings › About); the Arch package is
+updated through pacman instead. Or build it yourself (below).
 
 ## Build
 
@@ -145,6 +155,10 @@ Then connect to `localhost`, port `9092`, with no username. Add `--bind 0.0.0.0`
 | `crates/transmission` | The RPC client (JSON-RPC 2.0, Transmission 4.1+) and its types, with no Tauri dependency |
 | `crates/transmission/examples/mock_server.rs` | The mock Transmission above |
 | `scripts/test-container.sh` | Runs the integration tests against Transmission in a container |
+| `packaging/aur` | The Arch package, and `scripts/aur-update.sh` to move it to a new release |
+| `.github/workflows` | Checks on every push and pull request, and the release builds |
+
+[docs/releasing.md](docs/releasing.md) says how a version is released.
 
 [PLAN.md](PLAN.md) records the design decisions and how the app was built, phase by phase.
 

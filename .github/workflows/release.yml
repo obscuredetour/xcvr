@@ -1,0 +1,110 @@
+# Builds Transceiver for macOS and Linux and attaches the installers to a
+# draft GitHub release, to look over and publish by hand (as the latest
+# release: the in-app updater reads it).
+#
+# Run by pushing a tag `v<version>`, where version is [workspace.package]'s in
+# Cargo.toml (and crates/app/ui/package.json's), or by hand
+# (workflow_dispatch) on a tag. docs/releasing.md has the steps.
+#
+# The macOS builds are ad-hoc signed, not notarized (no Apple Developer ID):
+# Gatekeeper asks once (Privacy & Security › Open Anyway), and the release
+# notes say so. Ad-hoc rather than unsigned, which Apple silicon calls
+# "damaged" with no way past it but the Terminal.
+#
+# The installers are also signed for the in-app updater, which reads the
+# latest release's latest.json (tauri-action writes it) and refuses an update
+# whose signature doesn't match tauri.conf.json's public key. That needs these
+# repository secrets:
+#   TAURI_SIGNING_PRIVATE_KEY           the updater's private key (the file's contents)
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  its password, if it has one
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: macOS Apple Silicon, os: macos-14 }
+          - { name: macOS Intel, os: macos-15-intel }
+          # The oldest supported Ubuntu, so the AppImage's glibc and WebKitGTK suit most distributions.
+          - { name: Linux, os: ubuntu-22.04 }
+    steps:
+      - uses: actions/checkout@v5
+      - name: The tag matches the version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          v="$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)"
+          ui="$(sed -n 's/^  "version": "\(.*\)",$/\1/p' crates/app/ui/package.json)"
+          test "refs/tags/v$v" = "$GITHUB_REF" || { echo "Cargo.toml's version is $v but the tag is $GITHUB_REF"; exit 1; }
+          test "$ui" = "$v" || { echo "crates/app/ui/package.json's version is $ui, not $v"; exit 1; }
+      # Without it there'd be no latest.json, and copies that update themselves would never hear of this release.
+      - name: Updater key
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          [ -n "$TAURI_SIGNING_PRIVATE_KEY" ] || { echo "The TAURI_SIGNING_PRIVATE_KEY secret isn't set (docs/releasing.md)"; exit 1; }
+      - name: Ad-hoc signing (macOS)
+        if: runner.os == 'macOS'
+        run: echo "APPLE_SIGNING_IDENTITY=-" >> "$GITHUB_ENV"
+      - name: Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev patchelf
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: tauri-cli@2
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: crates/app/ui/package.json
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: crates/app/ui/pnpm-lock.yaml
+      - name: UI dependencies
+        run: pnpm --dir crates/app/ui install --frozen-lockfile
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: crates/app
+          tauriScript: cargo tauri
+          # Here rather than in tauri.conf.json, so local builds don't need the key.
+          args: --config '{"bundle":{"createUpdaterArtifacts":true}}'
+          tagName: ${{ github.ref_name }}
+          releaseName: Transceiver __VERSION__
+          releaseBody: |
+            Transceiver __VERSION__. Needs Transmission 4.1 or newer on the host.
+
+            - **macOS** 13 or later: `aarch64.dmg` for Apple silicon, `x64.dmg` for Intel. Not notarized: the first time, macOS says it can't verify Transceiver. Open System Settings › Privacy & Security, choose **Open Anyway** beside "Transceiver was blocked", and confirm.
+            - **Linux**: the `.AppImage`, or the `.deb` / `.rpm` for your distribution. The tray icon needs `libayatana-appindicator`. On Arch, see `packaging/aur` in the repository.
+
+            Installed from these, Transceiver updates itself (Settings › About).
+          releaseDraft: true
+          prerelease: false

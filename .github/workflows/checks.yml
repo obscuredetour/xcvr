@@ -1,0 +1,67 @@
+# Runs on every push to main and every pull request: Rust formatting, lints
+# and tests, the RPC client's tests against a real Transmission in Docker,
+# and the UI's type check, formatting and build. Linux only (the cheapest
+# runner); a newer push cancels the run it replaces. Draft pull requests wait
+# until they're marked ready, and changes that only touch documentation don't
+# run at all. The runner is pinned (not ubuntu-latest) so a new Ubuntu, and
+# the WebKitGTK packages Tauri builds against, arrive when we choose.
+name: Checks
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md", "docs/**"]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore: ["**.md", "docs/**"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    name: Rust (format, clippy, tests)
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: System libraries Tauri builds against
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      # The app embeds the UI's build, so it needs one to compile; an empty one does.
+      - run: mkdir -p crates/app/ui/dist
+      - run: cargo clippy --workspace --all-targets --examples -- -D warnings
+      - run: cargo test --workspace
+      # Against Transmission 4.1.3 in Docker: adds, changes and removes torrents.
+      - run: scripts/test-container.sh
+
+  ui:
+    name: UI (types, format, build)
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: crates/app/ui/package.json
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: crates/app/ui/pnpm-lock.yaml
+      - run: pnpm --dir crates/app/ui install --frozen-lockfile
+      - run: pnpm --dir crates/app/ui lint
+      - run: pnpm --dir crates/app/ui build

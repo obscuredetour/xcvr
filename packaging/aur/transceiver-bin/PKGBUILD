@@ -1,0 +1,57 @@
+# Maintainer: obscuredetour <25191266+obscuredetour@users.noreply.github.com>
+#
+# Transceiver's release .deb, repackaged for Arch. Meant for the AUR as
+# transceiver-bin; until it's there, build it from this folder with
+# `makepkg -si` (packaging/aur/README.md). scripts/aur-update.sh sets pkgver
+# and the checksum for a release.
+
+pkgname=transceiver-bin
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='A desktop client for Transmission'
+arch=('x86_64')
+url='https://github.com/obscuredetour/xcvr'
+license=('MIT')
+# What the binary links (namcap's list), the icon theme its icons go in, and the tray's
+# library, which namcap can't see: Transceiver loads it when it starts, and runs without a tray icon
+# when it's missing.
+depends=(
+  'cairo'
+  'dbus'
+  'gdk-pixbuf2'
+  'glib2'
+  'glibc'
+  'gtk3'
+  'hicolor-icon-theme'
+  'libayatana-appindicator'
+  'libgcc'
+  'libsoup3'
+  'openssl'
+  'pango'
+  'webkit2gtk-4.1'
+)
+optdepends=(
+  'transmission-cli: a Transmission to connect to, if it runs on this computer'
+)
+provides=('transceiver')
+conflicts=('transceiver')
+# A repackaged binary: stripped as usual, with no separate -debug package.
+options=('!debug')
+source=("https://github.com/obscuredetour/xcvr/releases/download/v${pkgver}/Transceiver_${pkgver}_amd64.deb"
+        "LICENSE-${pkgver}::https://raw.githubusercontent.com/obscuredetour/xcvr/v${pkgver}/LICENSE")
+# Set for each release by scripts/aur-update.sh, once the release is published.
+sha256sums=('SKIP'
+            'SKIP')
+
+package() {
+  bsdtar -xf data.tar.gz -C "${pkgdir}"
+
+  # Tauri puts the 256 px icon in "256x256@2", which isn't a hicolor size.
+  local icons="${pkgdir}/usr/share/icons/hicolor"
+  if [[ -d "${icons}/256x256@2" ]]; then
+    install -Dm644 "${icons}/256x256@2/apps/xcvr.png" "${icons}/256x256/apps/xcvr.png"
+    rm -r "${icons}/256x256@2"
+  fi
+
+  install -Dm644 "LICENSE-${pkgver}" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
