@@ -12,7 +12,7 @@ pkgdesc='A desktop client for Transmission'
 arch=('x86_64')
 url='https://github.com/obscuredetour/xcvr'
 license=('MIT')
-# What the binary links (namcap's list), the icon theme its icons go in, and the tray's
+# What the binary links (namcap's list, from the real release), the icon theme its icons go in, and the tray's
 # library, which namcap can't see: Transceiver loads it when it starts, and runs without a tray icon
 # when it's missing.
 depends=(
@@ -27,7 +27,6 @@ depends=(
   'libgcc'
   'libsoup3'
   'openssl'
-  'pango'
   'webkit2gtk-4.1'
 )
 optdepends=(
@@ -40,8 +39,8 @@ options=('!debug')
 source=("https://github.com/obscuredetour/xcvr/releases/download/v${pkgver}/Transceiver_${pkgver}_amd64.deb"
         "LICENSE-${pkgver}::https://raw.githubusercontent.com/obscuredetour/xcvr/v${pkgver}/LICENSE")
 # Set for each release by scripts/aur-update.sh, once the release is published.
-sha256sums=('SKIP'
-            'SKIP')
+sha256sums=('6652c964cee0e0d273d6317fcbb92830cf6da1b2d1784598653609ac0ed03b28'
+            '7339b184489ab71f06671840aff2aa2c3e2423a8ab564d06de203c8222677ed1')
 
 package() {
   bsdtar -xf data.tar.gz -C "${pkgdir}"
