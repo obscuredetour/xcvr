@@ -192,27 +192,60 @@ export function setLabelFilter(label: string | null): void {
   else storage.set('labelFilter', label);
 }
 
-/** The table grouped by label: a torrent shows under each label it has, and under "No label". */
-const [groupByLabel, setGroupByLabelSignal] = createSignal(storage.get('groupByLabel') === 'on');
-export { groupByLabel };
+/** The sidebar's folder filter: a download folder on the host, or null for any. */
+const [folderFilter, setFolderFilterSignal] = createSignal<string | null>(storage.get('folderFilter'));
+export { folderFilter };
 
-export function setGroupByLabel(on: boolean): void {
-  setGroupByLabelSignal(on);
-  storage.set('groupByLabel', on ? 'on' : 'off');
+export function setFolderFilter(folder: string | null): void {
+  setFolderFilterSignal(folder);
+  if (folder === null) storage.remove('folderFilter');
+  else storage.set('folderFilter', folder);
 }
 
-/** Groups folded shut, by label ('' for "No label"). */
+/**
+ * How the table is grouped: by label (a torrent shows under each label it has,
+ * and under "No label"), by download folder, or not at all.
+ */
+export type GroupBy = 'label' | 'folder' | null;
+const storedGroupBy = storage.get('groupBy') ?? (storage.get('groupByLabel') === 'on' ? 'label' : null);
+const [groupBy, setGroupBySignal] = createSignal<GroupBy>(
+  storedGroupBy === 'label' || storedGroupBy === 'folder' ? storedGroupBy : null,
+);
+export { groupBy };
+
+export function setGroupBy(by: GroupBy): void {
+  setGroupBySignal(by);
+  if (by === null) storage.remove('groupBy');
+  else storage.set('groupBy', by);
+  storage.remove('groupByLabel');
+}
+
+/** Groups folded shut, by key: a label ('' for "No label"), or `folder:` and its path. */
 const [collapsedGroups, setCollapsedGroups] = createSignal<ReadonlySet<string>>(
   new Set(storedJson('collapsedGroups', isStrings, [])),
 );
 export { collapsedGroups };
 
-export function toggleGroup(label: string): void {
+export function toggleGroup(key: string): void {
   const next = new Set(collapsedGroups());
-  if (next.has(label)) next.delete(label);
-  else next.add(label);
+  if (next.has(key)) next.delete(key);
+  else next.add(key);
   setCollapsedGroups(next);
   storage.set('collapsedGroups', JSON.stringify([...next]));
+}
+
+/** The sidebar's sections folded shut ('status', 'labels', 'folders'). */
+const [foldedSections, setFoldedSections] = createSignal<ReadonlySet<string>>(
+  new Set(storedJson('sidebarFolded', isStrings, [])),
+);
+export { foldedSections };
+
+export function toggleSection(id: string): void {
+  const next = new Set(foldedSections());
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  setFoldedSections(next);
+  storage.set('sidebarFolded', JSON.stringify([...next]));
 }
 
 /** The search box's text (not kept between launches). */

@@ -160,6 +160,7 @@ Each phase ends with something runnable on both the Mac and the CachyOS machine.
   - **Sidebar:** right-click a label to Rename (the name is pre-filled) or Delete (asks first).
   - **Grouping:** the toggle beside the Labels heading groups the table Gmail-style. A torrent appears under each of its labels, "No label" comes last, and groups fold (remembered). With a label filter on, only that group shows.
   - **Keyboard:** ↑/↓ and Shift-click follow the grouped order, visiting each torrent once (`navOrder`).
+  - **Folders (added later):** the sidebar also lists download folders (each torrent's parent folder), named relative to Transmission's default one, with counts. They filter like labels and combine with them, and the table can group by folder instead of by label (one grouping at a time).
 
 **8. Preferences (must-have)**
 - `session_get/set`: default download dir, incomplete dir, global and alt speed limits + schedule, queue sizes, seeding limits, peer port and limits, encryption, blocklist.

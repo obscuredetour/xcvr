@@ -167,7 +167,7 @@ struct Seed {
     name: &'static str,
     /// The name in its .torrent, when it's been renamed since.
     original: Option<&'static str>,
-    /// Under ~/Downloads.
+    /// Under ~/Downloads ("" for right in it), or a full path.
     folder: &'static str,
     labels: &'static [&'static str],
     /// Paths inside the torrent and their sizes; empty for a single file named `name`.
@@ -434,7 +434,7 @@ const SEEDS: &[Seed] = &[
     Seed {
         name: "Spring (2019)",
         original: None,
-        folder: "Films",
+        folder: "/Volumes/Media/Films",
         labels: &["film", "open-movie"],
         files: &[("Spring (2019)/spring_1080p.mp4", 1.02 * GB), ("Spring (2019)/spring_poster.png", 3.2 * MB)],
         size: 0.0,
@@ -493,7 +493,7 @@ const SEEDS: &[Seed] = &[
     Seed {
         name: "LibreOffice_25.8.2_MacOS_aarch64.dmg",
         original: None,
-        folder: "Software",
+        folder: "",
         labels: &["software"],
         files: &[],
         size: 312.0 * MB,
@@ -951,7 +951,11 @@ impl Mock {
                 seed.name,
                 seed.original.unwrap_or(seed.name),
                 files,
-                &format!("{HOME}/Downloads/{}", seed.folder),
+                &match seed.folder {
+                    "" => format!("{HOME}/Downloads"),
+                    f if f.starts_with('/') => f.to_owned(),
+                    f => format!("{HOME}/Downloads/{f}"),
+                },
             );
             let sim = mock.torrents.last_mut().expect("just added");
             debug_assert_eq!(sim.id, id);

@@ -18,6 +18,8 @@ import ChevronRight from 'lucide-solid/icons/chevron-right';
 import ChevronUp from 'lucide-solid/icons/chevron-up';
 import CircleAlert from 'lucide-solid/icons/circle-alert';
 import Ellipsis from 'lucide-solid/icons/ellipsis';
+import Folder from 'lucide-solid/icons/folder';
+import FolderDown from 'lucide-solid/icons/folder-down';
 import Tag from 'lucide-solid/icons/tag';
 import Tags from 'lucide-solid/icons/tags';
 import TriangleAlert from 'lucide-solid/icons/triangle-alert';
@@ -39,6 +41,7 @@ import {
   type Tone,
 } from '../format';
 import { keys } from '../keys';
+import { isDefaultFolder } from '../folders';
 import { originalName } from '../originals';
 import {
   columnOrder,
@@ -477,7 +480,7 @@ export function TorrentTable(props: Props) {
     // Keyed by what's there, not where: folding a group moves rows of both heights.
     getItemKey: (i) => {
       const item = props.items[i];
-      return !item ? i : item.kind === 'group' ? `g:${item.label}` : `${item.group ?? ''}:${item.t.hash_string}`;
+      return !item ? i : item.kind === 'group' ? `g:${item.key}` : `${item.group ?? ''}:${item.t.hash_string}`;
     },
     overscan: 12,
   });
@@ -566,15 +569,7 @@ export function TorrentTable(props: Props) {
             return (
               <>
                 <Show when={group()}>
-                  {(g) => (
-                    <GroupHeader
-                      label={g().label}
-                      count={g().count}
-                      collapsed={g().collapsed}
-                      top={v.start}
-                      width={totalWidth()}
-                    />
-                  )}
+                  {(g) => <GroupHeader group={g()} collapsed={g().collapsed} top={v.start} width={totalWidth()} />}
                 </Show>
                 <Show when={row()}>
                   {(r) => (
@@ -619,7 +614,15 @@ export function TorrentTable(props: Props) {
 }
 
 /** A label's heading when the table is grouped: click to fold or unfold it. */
-function GroupHeader(props: { label: string; count: number; collapsed: boolean; top: number; width: number }) {
+function GroupHeader(props: {
+  group: Extract<TableItem, { kind: 'group' }>;
+  collapsed: boolean;
+  top: number;
+  width: number;
+}) {
+  const g = () => props.group;
+  const icon = () =>
+    g().by === 'folder' ? (isDefaultFolder(g().title ?? '') ? FolderDown : Folder) : g().label ? Tag : Tags;
   return (
     <div
       role="row"
@@ -635,13 +638,13 @@ function GroupHeader(props: { label: string; count: number; collapsed: boolean; 
       <button
         class="sticky left-0 flex h-full items-center gap-1.5 px-3 text-xs font-semibold text-muted hover:text-fg"
         aria-expanded={!props.collapsed}
-        title={props.collapsed ? 'Unfold' : 'Fold'}
-        onClick={() => toggleGroup(props.label)}
+        title={g().title ?? (props.collapsed ? 'Unfold' : 'Fold')}
+        onClick={() => toggleGroup(g().key)}
       >
         <Icon of={ChevronRight} size={12} class={props.collapsed ? '' : 'rotate-90'} />
-        <Icon of={props.label ? Tag : Tags} size={12} />
-        <span classList={{ italic: !props.label }}>{props.label || 'No label'}</span>
-        <span class="font-normal text-faint tabular-nums">{props.count}</span>
+        <Icon of={icon()} size={12} />
+        <span classList={{ italic: g().by === 'label' && !g().label }}>{g().label || 'No label'}</span>
+        <span class="font-normal text-faint tabular-nums">{g().count}</span>
       </button>
     </div>
   );

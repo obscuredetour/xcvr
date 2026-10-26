@@ -40,6 +40,8 @@ const SESSION_FIELDS: &[SessionField] = &[
     SessionField::SpeedLimitDownEnabled,
     SessionField::SpeedLimitUp,
     SessionField::SpeedLimitUpEnabled,
+    // The default download folder: the sidebar names folders relative to it.
+    SessionField::DownloadDir,
 ];
 
 /// How often to poll while the window is showing, and while it's hidden or minimized.
