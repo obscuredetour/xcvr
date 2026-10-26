@@ -100,15 +100,15 @@ mod tests {
 
     #[test]
     fn maps_by_whole_folders() {
-        let list = [m("/Users/jamie/Downloads", "/Volumes/Downloads")];
+        let list = [m("/Users/alice/Downloads", "/Volumes/Downloads")];
         assert_eq!(
-            map(&list, "/Users/jamie/Downloads/debian/disk.iso"),
+            map(&list, "/Users/alice/Downloads/debian/disk.iso"),
             Some(PathBuf::from("/Volumes/Downloads/debian/disk.iso"))
         );
-        assert_eq!(map(&list, "/Users/jamie/Downloads"), Some(PathBuf::from("/Volumes/Downloads")));
-        assert_eq!(map(&list, "/Users/jamie/Downloads/"), Some(PathBuf::from("/Volumes/Downloads")));
-        assert_eq!(map(&list, "/Users/jamie/Downloads2/x"), None, "not a folder of it");
-        assert_eq!(map(&list, "/Users/jamie/Movies/x"), None);
+        assert_eq!(map(&list, "/Users/alice/Downloads"), Some(PathBuf::from("/Volumes/Downloads")));
+        assert_eq!(map(&list, "/Users/alice/Downloads/"), Some(PathBuf::from("/Volumes/Downloads")));
+        assert_eq!(map(&list, "/Users/alice/Downloads2/x"), None, "not a folder of it");
+        assert_eq!(map(&list, "/Users/alice/Movies/x"), None);
     }
 
     #[test]
@@ -129,8 +129,8 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("xcvr-paths-{}", std::process::id()));
         let file = dir.join("paths.json");
         let mappings = Mappings::load(file.clone());
-        let saved = mappings.set(vec![m(" /Users/jamie/Downloads/ ", "/Volumes/Downloads/"), m("", "/x")]).unwrap();
-        assert_eq!(saved, [m("/Users/jamie/Downloads", "/Volumes/Downloads")]);
+        let saved = mappings.set(vec![m(" /Users/alice/Downloads/ ", "/Volumes/Downloads/"), m("", "/x")]).unwrap();
+        assert_eq!(saved, [m("/Users/alice/Downloads", "/Volumes/Downloads")]);
         assert_eq!(Mappings::load(file).list(), saved);
         fs::remove_dir_all(dir).unwrap();
     }

@@ -150,14 +150,14 @@ async fn old_transmission_is_refused() {
 #[tokio::test]
 async fn credentials_are_sent_and_rejections_reported() {
     let server = MockServer::start().await;
-    // "jamie:secret"
-    Mock::given(header("authorization", "Basic amFtaWU6c2VjcmV0"))
+    // "alice:secret"
+    Mock::given(header("authorization", "Basic YWxpY2U6c2VjcmV0"))
         .and(header_exists(SESSION))
         .respond_with(answer(json!({})))
         .with_priority(1)
         .mount(&server)
         .await;
-    Mock::given(header("authorization", "Basic amFtaWU6c2VjcmV0"))
+    Mock::given(header("authorization", "Basic YWxpY2U6c2VjcmV0"))
         .respond_with(conflict("s"))
         .with_priority(5)
         .mount(&server)
@@ -166,10 +166,10 @@ async fn credentials_are_sent_and_rejections_reported() {
 
     let addr = server.address();
     let good =
-        Client::new(Config::new(addr.ip().to_string(), addr.port()).with_credentials("jamie", "secret")).unwrap();
+        Client::new(Config::new(addr.ip().to_string(), addr.port()).with_credentials("alice", "secret")).unwrap();
     good.torrent_verify(&Ids::one(1)).await.unwrap();
 
-    let bad = Client::new(Config::new(addr.ip().to_string(), addr.port()).with_credentials("jamie", "wrong")).unwrap();
+    let bad = Client::new(Config::new(addr.ip().to_string(), addr.port()).with_credentials("alice", "wrong")).unwrap();
     assert!(matches!(bad.torrent_verify(&Ids::one(1)).await.unwrap_err(), Error::Unauthorized));
 }
 
