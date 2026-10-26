@@ -2,6 +2,8 @@
 
 mod actions;
 mod commands;
+#[cfg(target_os = "linux")]
+mod desktop;
 mod general;
 mod inbox;
 mod inspect;
@@ -72,6 +74,12 @@ fn main() {
             app.manage(Poller::start(app.handle().clone()));
             tray::build(app.handle())?;
             general::apply_shortcut(app.handle(), shortcut_enabled);
+
+            // Linux: dev builds need their own desktop entry for the titlebar icon (packages ship one).
+            #[cfg(target_os = "linux")]
+            if let Ok(data) = app.path().data_dir() {
+                let _ = desktop::sync_dev_entry(&data);
+            }
 
             // The window starts hidden (tauri.conf.json): shown now, unless launched at login.
             let args: Vec<String> = std::env::args().skip(1).collect();

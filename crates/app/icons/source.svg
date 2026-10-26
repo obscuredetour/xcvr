@@ -7,6 +7,8 @@
     </linearGradient>
   </defs>
   <rect x="100" y="100" width="824" height="824" rx="184" fill="url(#g)"/>
+  <!-- The mark at 80% about the centre, for room between the waves and the edges. -->
+  <g transform="translate(512 512) scale(.8) translate(-512 -512)">
   <g fill="none" stroke-linecap="round" stroke-width="56">
     <path d="M352 352 A226 226 0 0 1 672 352" stroke="#7dd3c0"/>
     <path d="M262 262 A354 354 0 0 1 762 262" stroke="#7dd3c0" opacity=".55"/>
@@ -14,4 +16,5 @@
     <path d="M262 762 A354 354 0 0 0 762 762" stroke="#f2b36b" opacity=".55"/>
   </g>
   <circle cx="512" cy="512" r="72" fill="#eef2f7"/>
+  </g>
 </svg>

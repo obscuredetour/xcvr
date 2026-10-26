@@ -185,6 +185,7 @@ Each phase ends with something runnable on both the Mac and the CachyOS machine.
   - **Settings › General (`settings.rs`, `general.rs`, `app.json`):** launch at login (autostart: a LaunchAgent on macOS, an XDG autostart entry on Linux, both with `--hidden`), keep running, notify on finish, and the show-window shortcut ⌥⌘X / Ctrl+Alt+X. On Wayland the page explains binding `xcvr --show` in System Settings instead.
   - **Bundle:** `magnet` deep-link scheme and a `.torrent` file association (rank Alternate, so it doesn't claim to be the default) in `tauri.conf.json`.
   - **Key labels:** modifiers now follow platform order (⌥⌘X, ⇧⌘T; Ctrl+Alt+X elsewhere).
+  - **Linux titlebar icon:** KWin finds it only through the desktop entry named after the window's app_id ("Transceiver", set with `glib::set_prgname` as in Magnitide). Packages ship `Transceiver.desktop`. Dev builds write their own to `~/.local/share/applications` (`desktop.rs`): hidden from the launcher and pointing at the dev binary and the repo icon. Release builds, or a dev build once a package's entry exists, remove it so it never hides the package's entry.
 
 **10. Clean up view**
 - A dialog or saved view that lists candidates: seeding longer than N days, ratio above X, no upload activity in N days, or finished (hit its seed limit).
