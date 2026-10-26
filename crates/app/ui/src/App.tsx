@@ -19,6 +19,7 @@ import { tableView, TorrentArea } from './components/TorrentArea';
 import { QuestionHost } from './question';
 import { pruneSelection, select, selectAll, selectedHash, selectedHashes, selectRange } from './selection';
 import { Toast, toast } from './toast';
+import { watchOriginals } from './originals';
 import { torrent, watchTorrents } from './torrents';
 import { inspectorOpen, setInspectorOpen, setSidebarOpen, sidebarOpen } from './view';
 import { resetZoom, stepZoom } from './zoom';
@@ -176,6 +177,8 @@ export function App() {
     onCleanup(() => void unlistenNotice.then((off) => off()));
     // The inspector's torrent, in full, while it shows one.
     watchInspector();
+    // Original names, for two-line rows.
+    watchOriginals();
   });
 
   // Selected torrents that are gone (removed, or another host) stop being selected.

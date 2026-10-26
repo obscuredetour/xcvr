@@ -134,6 +134,8 @@ export const api = {
   setPathMappings: (list: PathMapping[]) => invoke<MappingView[]>('set_path_mappings', { list }),
   /** Where the host keeps its .torrent copies (original names), and whether a mapping reaches it. */
   torrentsFolder: () => invoke<TorrentsFolder | null>('torrents_folder'),
+  /** Every renamed torrent's original name, by hash (for two-line rows). */
+  originalNames: () => invoke<Record<string, string>>('original_names'),
   /** Open a torrent (or its file at index `file`) here, or reveal it, through the path mappings. */
   openTorrent: (hash: string, file: number | null, reveal: boolean) =>
     invoke<void>('open_torrent', { hash, file, reveal }),

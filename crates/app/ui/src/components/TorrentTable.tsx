@@ -39,6 +39,7 @@ import {
   type Tone,
 } from '../format';
 import { keys } from '../keys';
+import { originalName } from '../originals';
 import {
   columnOrder,
   columnSizing,
@@ -46,8 +47,14 @@ import {
   resetColumnOrder,
   setColumnOrder,
   setColumnSizing,
+  SECOND_LINES,
+  sayOriginally,
+  secondLine,
   setColumnVisibility,
+  setSecondLine,
+  setTallRows,
   sort,
+  tallRows,
   toggleGroup,
   toggleSort,
   zebraRows,
@@ -56,6 +63,9 @@ import { Icon } from './Icon';
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from './Menu';
 
 const ROW_H = 32;
+/** Two-line rows: the name, and its original name or folder under it. */
+const TALL_ROW_H = 46;
+const rowHeight = () => (tallRows() ? TALL_ROW_H : ROW_H);
 const GROUP_H = 30;
 /** Always shown: every row needs a name. */
 const LOCKED_COLUMN = 'name';
@@ -108,10 +118,51 @@ function NameCell(props: { t: Torrent }) {
           </span>
         )}
       </Show>
-      <span class="truncate font-medium" title={props.t.name}>
-        {props.t.name}
+      <span class="flex min-w-0 flex-col">
+        <span class="truncate font-medium" title={props.t.name}>
+          {props.t.name}
+        </span>
+        <Show when={tallRows()}>
+          <SecondLine t={props.t} />
+        </Show>
       </span>
     </span>
+  );
+}
+
+const lineText = 'truncate text-[11.5px]';
+
+/** Under the name in expanded rows: the original name (else the folder), the folder, or the labels. */
+function SecondLine(props: { t: Torrent }) {
+  const original = () => (secondLine() === 'original' ? originalName(props.t.hash_string) : undefined);
+  const folder = () => (
+    <span class={`${lineText} text-faint`} title={props.t.download_dir}>
+      {props.t.download_dir}
+    </span>
+  );
+  return (
+    <Show
+      when={secondLine() !== 'labels'}
+      fallback={<span class={`${lineText} text-muted`}>{(props.t.labels ?? []).join(' · ')}</span>}
+    >
+      <Show when={original()} fallback={folder()}>
+        {(name) => (
+          <span class={`${lineText} text-muted`} title={`Originally ${name()}`}>
+            {sayOriginally() ? `Originally ${name()}` : name()}
+          </span>
+        )}
+      </Show>
+    </Show>
+  );
+}
+
+/** The Original Name column: the name before a rename, or (fainter) the name it has always had. */
+function OriginalCell(props: { t: Torrent }) {
+  const original = () => originalName(props.t.hash_string);
+  return (
+    <Show when={original()} fallback={<span class="text-faint">{props.t.name}</span>}>
+      {(name) => <span title={name()}>{name()}</span>}
+    </Show>
   );
 }
 
@@ -280,6 +331,13 @@ const columns: ColumnDef<typeof features, Torrent, unknown>[] = [
     meta: { sortable: true, label: 'Location' } satisfies Meta,
     cell: (info) => <span title={info.row.original.download_dir}>{muted(info.row.original.download_dir ?? '')}</span>,
   }),
+  col.display({
+    id: 'original',
+    size: 280,
+    header: 'Original Name',
+    meta: { sortable: true, label: 'Original Name' } satisfies Meta,
+    cell: (info) => <OriginalCell t={info.row.original} />,
+  }),
 ];
 
 const meta = (h: { column: { columnDef: { meta?: unknown } } }) => h.column.columnDef.meta as Meta;
@@ -415,7 +473,7 @@ export function TorrentTable(props: Props) {
       return props.items.length;
     },
     getScrollElement: () => scroller,
-    estimateSize: (i) => (props.items[i]?.kind === 'group' ? GROUP_H : ROW_H),
+    estimateSize: (i) => (props.items[i]?.kind === 'group' ? GROUP_H : rowHeight()),
     // Keyed by what's there, not where: folding a group moves rows of both heights.
     getItemKey: (i) => {
       const item = props.items[i];
@@ -425,7 +483,8 @@ export function TorrentTable(props: Props) {
   });
   createEffect(
     on(
-      () => props.items,
+      // New rows, or two-line rows turned on or off.
+      () => [props.items, tallRows()],
       () => virtualizer.measure(),
       { defer: true },
     ),
@@ -530,7 +589,7 @@ export function TorrentTable(props: Props) {
                       }}
                       data-selected={props.selectedHashes.has(r().id) || undefined}
                       data-hash={r().id}
-                      style={{ height: `${ROW_H}px`, transform: `translateY(${v.start}px)` }}
+                      style={{ height: `${rowHeight()}px`, transform: `translateY(${v.start}px)` }}
                       onClick={(e) => props.onSelect(r().id, e)}
                       onContextMenu={(e) => props.onContextMenu(r().id, e)}
                       onDblClick={() => props.onOpen(r().id)}
@@ -675,6 +734,21 @@ function ColumnPicker(props: { table: ReturnType<typeof createTable<typeof featu
       <Show when={columnOrder().length}>
         <MenuSeparator />
         <MenuItem onSelect={() => resetColumnOrder()}>Reset Column Order</MenuItem>
+      </Show>
+      <MenuSeparator />
+      <MenuLabel>Rows</MenuLabel>
+      <MenuItem checkbox keepOpen checked={tallRows()} onSelect={() => setTallRows(!tallRows())}>
+        Expanded (Two Lines)
+      </MenuItem>
+      <Show when={tallRows()}>
+        <MenuLabel>Second Line</MenuLabel>
+        <For each={SECOND_LINES}>
+          {([value, label]) => (
+            <MenuItem keepOpen checked={secondLine() === value} onSelect={() => setSecondLine(value)}>
+              {label}
+            </MenuItem>
+          )}
+        </For>
       </Show>
     </Menu>
   );

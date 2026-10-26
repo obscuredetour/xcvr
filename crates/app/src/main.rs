@@ -71,6 +71,7 @@ fn main() {
             app.manage(Inbox::default());
             app.manage(mappings::Mappings::load(dir.join("paths.json")));
             app.manage(originals::Originals::load(dir.join("originals.json")));
+            app.manage(inspect::CopyNames::default());
             app.manage(Poller::start(app.handle().clone()));
             tray::build(app.handle())?;
             general::apply_shortcut(app.handle(), shortcut_enabled);
@@ -152,6 +153,7 @@ fn main() {
             inspect::path_mappings,
             inspect::set_path_mappings,
             inspect::torrents_folder,
+            inspect::original_names,
             inspect::open_torrent,
             labels::edit_labels,
             labels::rename_label,

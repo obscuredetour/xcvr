@@ -8,6 +8,7 @@ import type { Torrent } from './api';
 import { FILTERS, type FilterId } from './format';
 import { torrents } from './torrents';
 import { collapsedGroups, groupByLabel, labelFilter, query, sort, type SortDir, statusFilter } from './view';
+import { originalName } from './originals';
 
 /** How each sortable column sorts: the value to compare, and which way it starts. */
 export const SORTS: Record<string, { value(t: Torrent): number | string; first: SortDir }> = {
@@ -29,6 +30,7 @@ export const SORTS: Record<string, { value(t: Torrent): number | string; first: 
   queue: { value: (t) => t.queue_position ?? 0, first: 'asc' },
   location: { value: (t) => t.download_dir ?? '', first: 'asc' },
   seeding: { value: (t) => t.seconds_seeding ?? 0, first: 'desc' },
+  original: { value: (t) => originalName(t.hash_string) ?? t.name ?? '', first: 'asc' },
 };
 
 /** Status order for sorting: what needs attention first, then what's moving, then what's resting. */

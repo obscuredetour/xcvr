@@ -5,6 +5,8 @@ import PanelRight from 'lucide-solid/icons/panel-right';
 import Pause from 'lucide-solid/icons/pause';
 import Play from 'lucide-solid/icons/play';
 import Plus from 'lucide-solid/icons/plus';
+import Rows2 from 'lucide-solid/icons/rows-2';
+import Rows3 from 'lucide-solid/icons/rows-3';
 import Search from 'lucide-solid/icons/search';
 import Settings from 'lucide-solid/icons/settings';
 import Trash from 'lucide-solid/icons/trash';
@@ -17,7 +19,16 @@ import { isConnected, session, setTurtle } from '../connection';
 import { deleteKeys } from '../keys';
 import { torrent } from '../torrents';
 import type { SettingsSection } from './settings/Settings';
-import { inspectorOpen, query, setInspectorOpen, setQuery, setSidebarOpen, sidebarOpen } from '../view';
+import {
+  inspectorOpen,
+  query,
+  setInspectorOpen,
+  setQuery,
+  setSidebarOpen,
+  setTallRows,
+  sidebarOpen,
+  tallRows,
+} from '../view';
 import { ThemeMenu } from './ThemeMenu';
 import { Icon } from './Icon';
 import { keys } from '../keys';
@@ -210,6 +221,15 @@ export function TopBar(props: Props) {
             </button>
           )}
         </Show>
+        <button
+          class={iconButton}
+          aria-pressed={tallRows()}
+          title={tallRows() ? 'Condensed rows' : 'Expanded rows'}
+          aria-label="Expanded rows"
+          onClick={() => setTallRows(!tallRows())}
+        >
+          <Icon of={tallRows() ? Rows3 : Rows2} size={16} />
+        </button>
         <button
           class={iconButton}
           aria-pressed={inspectorOpen()}

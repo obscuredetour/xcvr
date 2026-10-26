@@ -2,7 +2,9 @@
 //! and files, renaming it, moving it, and opening or revealing it here
 //! (through the path mappings).
 
-use std::path::Path;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use serde::Serialize;
 use tauri::{AppHandle, State};
@@ -92,27 +94,97 @@ pub async fn original_name(
     poller: State<'_, Poller>,
     mappings: State<'_, Mappings>,
     originals: State<'_, Originals>,
+    copies: State<'_, CopyNames>,
 ) -> Result<Option<String>, Problem> {
     let client = client(&poller)?;
     let fields = [TorrentField::Name, TorrentField::TorrentFile];
     let got = client.torrent_get(&Ids::hashes([hash.as_str()]), &fields).await.map_err(problem)?;
     let Some(t) = got.torrents.into_iter().next() else { return Ok(None) };
 
+    let cached = copies.0.lock().unwrap_or_else(|e| e.into_inner()).get(&hash).cloned();
     let on_host = t.torrent_file.as_deref().and_then(|f| mappings.to_local(f));
-    let from_file = match on_host {
+    let from_file = match (cached, on_host) {
+        (Some(name), _) => Some(name),
         // Off the main thread: it may be on a network share.
-        Some(local) => tauri::async_runtime::spawn_blocking(move || {
-            crate::actions::read_torrent_bytes(&local).ok().and_then(|b| transmission::read_metainfo(&b).ok())
-        })
-        .await
-        .ok()
-        .flatten()
-        .map(|m| m.name)
-        .filter(|n| !n.is_empty()),
-        None => None,
+        (None, Some(local)) => {
+            let name = tauri::async_runtime::spawn_blocking(move || name_in_copy(&local)).await.ok().flatten();
+            if let Some(name) = &name {
+                copies.0.lock().unwrap_or_else(|e| e.into_inner()).insert(hash.clone(), name.clone());
+            }
+            name
+        }
+        (None, None) => None,
     };
     let original = from_file.or_else(|| originals.get(&hash));
     Ok(original.filter(|o| Some(o) != t.name.as_ref()))
+}
+
+/// Names read from the host's .torrent copies, by hash. A copy never changes, so each is
+/// read once (copies that couldn't be read are tried again next time).
+#[derive(Default)]
+pub struct CopyNames(Mutex<HashMap<String, String>>);
+
+/// The name in a .torrent copy here (blocking: it may be on a network share).
+fn name_in_copy(local: &Path) -> Option<String> {
+    let bytes = crate::actions::read_torrent_bytes(local).ok()?;
+    transmission::read_metainfo(&bytes).ok().map(|m| m.name).filter(|n| !n.is_empty())
+}
+
+/// Every renamed torrent's original name, by hash, for the table's second line: from the
+/// host's .torrent copies where the mappings reach them, else from renames made here.
+#[tauri::command]
+pub async fn original_names(
+    poller: State<'_, Poller>,
+    mappings: State<'_, Mappings>,
+    originals: State<'_, Originals>,
+    copies: State<'_, CopyNames>,
+) -> Result<HashMap<String, String>, Problem> {
+    let client = client(&poller)?;
+    let fields = [TorrentField::HashString, TorrentField::Name, TorrentField::TorrentFile];
+    let torrents = client.torrent_get(&Ids::All, &fields).await.map_err(problem)?.torrents;
+
+    let unread = copies.unread(&torrents, &mappings);
+    if !unread.is_empty() {
+        let read = tauri::async_runtime::spawn_blocking(move || read_copies(unread)).await.unwrap_or_default();
+        copies.add(read);
+    }
+    Ok(copies.originals(torrents, &originals))
+}
+
+impl CopyNames {
+    /// Torrents whose copy hasn't been read yet but can be reached here: (hash, path here).
+    fn unread(&self, torrents: &[Torrent], mappings: &Mappings) -> Vec<(String, PathBuf)> {
+        let known = self.0.lock().unwrap_or_else(|e| e.into_inner());
+        torrents
+            .iter()
+            .filter_map(|t| {
+                let hash = t.hash_string.as_ref().filter(|h| !known.contains_key(*h))?;
+                Some((hash.clone(), mappings.to_local(t.torrent_file.as_deref()?)?))
+            })
+            .collect()
+    }
+
+    fn add(&self, names: Vec<(String, String)>) {
+        self.0.lock().unwrap_or_else(|e| e.into_inner()).extend(names);
+    }
+
+    /// Original names that differ from the current ones, by hash.
+    fn originals(&self, torrents: Vec<Torrent>, originals: &Originals) -> HashMap<String, String> {
+        let known = self.0.lock().unwrap_or_else(|e| e.into_inner());
+        torrents
+            .into_iter()
+            .filter_map(|t| {
+                let hash = t.hash_string?;
+                let original = known.get(&hash).cloned().or_else(|| originals.get(&hash))?;
+                (Some(&original) != t.name.as_ref()).then_some((hash, original))
+            })
+            .collect()
+    }
+}
+
+/// Read the names in these copies (blocking); unreadable ones are left out.
+fn read_copies(unread: Vec<(String, PathBuf)>) -> Vec<(String, String)> {
+    unread.into_iter().filter_map(|(hash, local)| Some((hash, name_in_copy(&local)?))).collect()
 }
 
 /// Point torrents at a folder on the host, moving their data there or not.
@@ -276,5 +348,50 @@ mod tests {
         assert_eq!(folder.local.as_deref(), Some("/Volumes/Transmission/Torrents"));
         assert_eq!(local_file.as_deref(), Some(Path::new("/Volumes/Transmission/Torrents/abc.torrent")));
         let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn original_names_come_from_the_copies_then_from_renames_here() {
+        let dir = std::env::temp_dir().join(format!("xcvr-copies-test-{}", std::process::id()));
+        std::fs::create_dir_all(dir.join("torrents")).unwrap();
+        // A minimal .torrent whose name is "Original Name".
+        let info = b"d6:lengthi1e4:name13:Original Name12:piece lengthi16384e6:pieces20:aaaaaaaaaaaaaaaaaaaae";
+        let mut copy = b"d4:info".to_vec();
+        copy.extend_from_slice(info);
+        copy.push(b'e');
+        std::fs::write(dir.join("torrents/a.torrent"), &copy).unwrap();
+
+        let mappings = Mappings::load(dir.join("paths.json"));
+        mappings.set(vec![PathMapping { host: "/config".into(), local: dir.to_string_lossy().into() }]).unwrap();
+        let originals = Originals::load(dir.join("originals.json"));
+        originals.remember("c", "Renamed Here From");
+
+        let t = |hash: &str, name: &str, file: Option<&str>| Torrent {
+            hash_string: Some(hash.into()),
+            name: Some(name.into()),
+            torrent_file: file.map(Into::into),
+            ..Default::default()
+        };
+        let torrents = vec![
+            t("a", "New Name", Some("/config/torrents/a.torrent")),
+            t("b", "Not Renamed", Some("/elsewhere/b.torrent")),
+            t("c", "Renamed Here", None),
+        ];
+
+        let copies = CopyNames::default();
+        let unread = copies.unread(&torrents, &mappings);
+        assert_eq!(unread.len(), 1, "only a's copy is reachable");
+        copies.add(read_copies(unread));
+        assert!(copies.unread(&torrents, &mappings).is_empty(), "read once");
+
+        let names = copies.originals(torrents.clone(), &originals);
+        assert_eq!(names.get("a").map(String::as_str), Some("Original Name"));
+        assert_eq!(names.get("c").map(String::as_str), Some("Renamed Here From"));
+        assert_eq!(names.len(), 2);
+
+        // Renamed back: no original to show.
+        let back = vec![t("a", "Original Name", Some("/config/torrents/a.torrent"))];
+        assert!(copies.originals(back, &originals).is_empty());
+        let _ = std::fs::remove_dir_all(dir);
     }
 }

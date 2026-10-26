@@ -1,9 +1,19 @@
-import { createSignal, For } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
 
 import { keys } from '../../keys';
-import { setZebraRows, zebraRows } from '../../view';
+import {
+  SECOND_LINES,
+  sayOriginally,
+  secondLine,
+  setSayOriginally,
+  setSecondLine,
+  setTallRows,
+  setZebraRows,
+  tallRows,
+  zebraRows,
+} from '../../view';
 import { resetZoom, tryZoom, ZOOM_STEPS, zoom, zoomLabel } from '../../zoom';
-import { button, Group, Heading, Row, Toggle } from './parts';
+import { button, Group, Heading, Row, Segmented, Toggle } from './parts';
 
 /**
  * Interface size: a slider over the zoom steps (by index, so each notch is one
@@ -63,6 +73,23 @@ export function Appearance() {
         <Row label="Striped rows" description="Alternate rows shaded, to follow a row across the table.">
           <Toggle label="Striped rows" checked={zebraRows()} onChange={setZebraRows} />
         </Row>
+        <Row
+          label="Expanded rows"
+          description="Taller rows, with a second line under each name. Also the rows button in the toolbar."
+        >
+          <Toggle label="Expanded rows" checked={tallRows()} onChange={setTallRows} />
+        </Row>
+        <Row
+          label="Second line"
+          description="A renamed torrent’s original name (others show their folder), the folder, or the labels. Original names need the host’s torrents folder mapped in Paths."
+        >
+          <Segmented label="Second line" value={secondLine()} options={SECOND_LINES} onChange={setSecondLine} />
+        </Row>
+        <Show when={secondLine() === 'original'}>
+          <Row label="Say “Originally”" description="Before each original name, to tell it from the current one.">
+            <Toggle label="Say Originally" checked={sayOriginally()} onChange={setSayOriginally} />
+          </Row>
+        </Show>
       </Group>
     </>
   );

@@ -13,6 +13,42 @@ export function setZebraRows(on: boolean): void {
   storage.set('tableZebra', on ? 'on' : 'off');
 }
 
+/** Expanded (two-line) rows, with a second line under each name; condensed unless turned on. */
+const [tallRows, setTallRowsSignal] = createSignal(storage.get('tableTall') === 'on');
+export { tallRows };
+
+export function setTallRows(on: boolean): void {
+  setTallRowsSignal(on);
+  storage.set('tableTall', on ? 'on' : 'off');
+}
+
+/** What the second line shows: the original name (else the folder), the folder, or the labels. */
+export type SecondLine = 'original' | 'folder' | 'labels';
+export const SECOND_LINES: readonly (readonly [SecondLine, string])[] = [
+  ['original', 'Original name'],
+  ['folder', 'Folder'],
+  ['labels', 'Labels'],
+];
+const storedLine = storage.get('tableSecondLine');
+const [secondLine, setSecondLineSignal] = createSignal<SecondLine>(
+  SECOND_LINES.some(([v]) => v === storedLine) ? (storedLine as SecondLine) : 'original',
+);
+export { secondLine };
+
+export function setSecondLine(line: SecondLine): void {
+  setSecondLineSignal(line);
+  storage.set('tableSecondLine', line);
+}
+
+/** "Originally" before an original name on the second line; off unless turned on. */
+const [sayOriginally, setSayOriginallySignal] = createSignal(storage.get('tableOriginally') === 'on');
+export { sayOriginally };
+
+export function setSayOriginally(on: boolean): void {
+  setSayOriginallySignal(on);
+  storage.set('tableOriginally', on ? 'on' : 'off');
+}
+
 /** Width of the inspector in CSS px (it also never squeezes the table below 320px). */
 export const INSPECTOR_WIDTH = { min: 300, max: 680, initial: 380 } as const;
 
@@ -81,6 +117,7 @@ const DEFAULT_HIDDEN: Record<string, boolean> = {
   queue: false,
   location: false,
   seeding: false,
+  original: false,
 };
 
 const [columnVisibility, setColumnVisibilitySignal] = createSignal<Record<string, boolean>>(
