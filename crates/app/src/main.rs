@@ -3,6 +3,7 @@
 mod actions;
 mod commands;
 mod inspect;
+mod labels;
 mod mappings;
 #[cfg(target_os = "macos")]
 mod menu;
@@ -76,6 +77,9 @@ fn main() {
             inspect::set_torrents,
             inspect::rename_torrent,
             inspect::original_name,
+            labels::edit_labels,
+            labels::rename_label,
+            labels::delete_label,
             inspect::set_location,
             inspect::path_mappings,
             inspect::set_path_mappings,

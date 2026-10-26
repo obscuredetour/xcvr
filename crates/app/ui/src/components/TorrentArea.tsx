@@ -4,7 +4,7 @@ import LoaderCircle from 'lucide-solid/icons/loader-circle';
 import Server from 'lucide-solid/icons/server';
 
 import { api } from '../api';
-import { isFiltered, shownTorrents } from '../browse';
+import { isFiltered, navOrder, shownTorrents, tableItems } from '../browse';
 import { primaryButton, secondaryButton } from '../buttons';
 import { connection, described } from '../connection';
 import { select, selectedHashes, selectRange, toggleSelected } from '../selection';
@@ -105,7 +105,7 @@ export const tableView: { current: TableHandle | undefined } = { current: undefi
 function Table(props: { onOpen(hash: string): void }) {
   const click = (hash: string, e: MouseEvent) => {
     if (e.metaKey || e.ctrlKey) toggleSelected(hash);
-    else if (e.shiftKey) selectRange(hash, shownTorrents());
+    else if (e.shiftKey) selectRange(hash, navOrder());
     else select(hash);
   };
   /** Right-click: the menu for the selection if it's in it, else for it alone (as in Finder). */
@@ -119,6 +119,7 @@ function Table(props: { onOpen(hash: string): void }) {
   return (
     <TorrentTable
       rows={shownTorrents()}
+      items={tableItems()}
       selectedHashes={selectedHashes()}
       emptyMessage={empty()}
       ref={(h) => (tableView.current = h)}

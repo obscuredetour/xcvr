@@ -12,15 +12,18 @@ import {
   type Updater,
 } from '@tanstack/solid-table';
 import { createVirtualizer } from '@tanstack/solid-virtual';
-import { createSignal, For, Index, onMount, Show } from 'solid-js';
+import { createEffect, createSignal, For, Index, on, onMount, Show } from 'solid-js';
 import ChevronDown from 'lucide-solid/icons/chevron-down';
+import ChevronRight from 'lucide-solid/icons/chevron-right';
 import ChevronUp from 'lucide-solid/icons/chevron-up';
 import CircleAlert from 'lucide-solid/icons/circle-alert';
 import Ellipsis from 'lucide-solid/icons/ellipsis';
+import Tag from 'lucide-solid/icons/tag';
+import Tags from 'lucide-solid/icons/tags';
 import TriangleAlert from 'lucide-solid/icons/triangle-alert';
 
 import type { Torrent } from '../api';
-import { SORTS } from '../browse';
+import { SORTS, type TableItem } from '../browse';
 import {
   formatDate,
   formatDateTime,
@@ -45,6 +48,7 @@ import {
   setColumnSizing,
   setColumnVisibility,
   sort,
+  toggleGroup,
   toggleSort,
   zebraRows,
 } from '../view';
@@ -52,6 +56,7 @@ import { Icon } from './Icon';
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from './Menu';
 
 const ROW_H = 32;
+const GROUP_H = 30;
 /** Always shown: every row needs a name. */
 const LOCKED_COLUMN = 'name';
 
@@ -288,7 +293,10 @@ export type TableHandle = {
 };
 
 type Props = {
+  /** Every torrent shown, each once (the table's data). */
   rows: Torrent[];
+  /** What's drawn, top to bottom: the rows, with group headers when grouping by label. */
+  items: TableItem[];
   selectedHashes: ReadonlySet<string>;
   /** Shown when there are no rows. */
   emptyMessage: string;
@@ -404,24 +412,36 @@ export function TorrentTable(props: Props) {
 
   const virtualizer = createVirtualizer({
     get count() {
-      return props.rows.length;
+      return props.items.length;
     },
     getScrollElement: () => scroller,
-    estimateSize: () => ROW_H,
+    estimateSize: (i) => (props.items[i]?.kind === 'group' ? GROUP_H : ROW_H),
+    // Keyed by what's there, not where: folding a group moves rows of both heights.
+    getItemKey: (i) => {
+      const item = props.items[i];
+      return !item ? i : item.kind === 'group' ? `g:${item.label}` : `${item.group ?? ''}:${item.t.hash_string}`;
+    },
     overscan: 12,
   });
+  createEffect(
+    on(
+      () => props.items,
+      () => virtualizer.measure(),
+      { defer: true },
+    ),
+  );
 
   onMount(() =>
     props.ref?.({
       reveal(hash) {
-        const i = props.rows.findIndex((r) => r.hash_string === hash);
+        const i = props.items.findIndex((it) => it.kind === 'torrent' && it.t.hash_string === hash);
         if (i >= 0) virtualizer.scrollToIndex(i, { align: 'auto' });
       },
       focus: () => scroller.focus(),
     }),
   );
 
-  const rows = () => table.getRowModel().rows;
+  const rowsById = () => table.getRowModel().rowsById;
   const totalWidth = () => table.getTotalSize();
 
   return (
@@ -475,45 +495,95 @@ export function TorrentTable(props: Props) {
       >
         <For each={virtualizer.getVirtualItems()}>
           {(v) => {
-            const row = () => rows()[v.index];
+            const item = () => props.items[v.index];
+            const group = () => {
+              const it = item();
+              return it?.kind === 'group' ? it : undefined;
+            };
+            const row = () => {
+              const it = item();
+              return it?.kind === 'torrent' ? rowsById()[it.t.hash_string!] : undefined;
+            };
             return (
-              <Show when={row()}>
-                {(r) => (
-                  <div
-                    role="row"
-                    aria-rowindex={v.index + 2}
-                    class="absolute top-0 left-0 flex w-full cursor-default items-center not-data-selected:hover:bg-hover data-selected:bg-selection data-selected:text-on-selection data-selected:**:text-on-selection"
-                    // With stripes, a hairline between rows too; without, nothing.
-                    classList={{
-                      'bg-stripe': zebraRows() && v.index % 2 === 1,
-                      'border-b border-line/75': !zebraRows(),
-                    }}
-                    data-selected={props.selectedHashes.has(r().id) || undefined}
-                    data-hash={r().id}
-                    style={{ height: `${ROW_H}px`, transform: `translateY(${v.start}px)` }}
-                    onClick={(e) => props.onSelect(r().id, e)}
-                    onContextMenu={(e) => props.onContextMenu(r().id, e)}
-                    onDblClick={() => props.onOpen(r().id)}
-                  >
-                    <For each={r().getVisibleCells()}>
-                      {(cell) => (
-                        <div
-                          role="cell"
-                          class="flex-none truncate px-3"
-                          classList={{ 'text-right tabular-nums': meta(cell).align === 'end' }}
-                          style={{ width: `${cell.column.getSize()}px` }}
-                        >
-                          <FlexRender cell={cell} />
-                        </div>
-                      )}
-                    </For>
-                  </div>
-                )}
-              </Show>
+              <>
+                <Show when={group()}>
+                  {(g) => (
+                    <GroupHeader
+                      label={g().label}
+                      count={g().count}
+                      collapsed={g().collapsed}
+                      top={v.start}
+                      width={totalWidth()}
+                    />
+                  )}
+                </Show>
+                <Show when={row()}>
+                  {(r) => (
+                    <div
+                      role="row"
+                      aria-rowindex={v.index + 2}
+                      class="absolute top-0 left-0 flex w-full cursor-default items-center not-data-selected:hover:bg-hover data-selected:bg-selection data-selected:text-on-selection data-selected:**:text-on-selection"
+                      // With stripes, a hairline between rows too; without, nothing.
+                      classList={{
+                        'bg-stripe': zebraRows() && v.index % 2 === 1,
+                        'border-b border-line/75': !zebraRows(),
+                      }}
+                      data-selected={props.selectedHashes.has(r().id) || undefined}
+                      data-hash={r().id}
+                      style={{ height: `${ROW_H}px`, transform: `translateY(${v.start}px)` }}
+                      onClick={(e) => props.onSelect(r().id, e)}
+                      onContextMenu={(e) => props.onContextMenu(r().id, e)}
+                      onDblClick={() => props.onOpen(r().id)}
+                    >
+                      <For each={r().getVisibleCells()}>
+                        {(cell) => (
+                          <div
+                            role="cell"
+                            class="flex-none truncate px-3"
+                            classList={{ 'text-right tabular-nums': meta(cell).align === 'end' }}
+                            style={{ width: `${cell.column.getSize()}px` }}
+                          >
+                            <FlexRender cell={cell} />
+                          </div>
+                        )}
+                      </For>
+                    </div>
+                  )}
+                </Show>
+              </>
             );
           }}
         </For>
       </div>
+    </div>
+  );
+}
+
+/** A label's heading when the table is grouped: click to fold or unfold it. */
+function GroupHeader(props: { label: string; count: number; collapsed: boolean; top: number; width: number }) {
+  return (
+    <div
+      role="row"
+      class="absolute top-0 left-0 flex w-full items-center border-b border-line bg-panel"
+      style={{
+        height: `${GROUP_H}px`,
+        transform: `translateY(${props.top}px)`,
+        width: `${props.width}px`,
+        'min-width': '100%',
+      }}
+    >
+      {/* Sticky, so the label stays in view when the table scrolls sideways. */}
+      <button
+        class="sticky left-0 flex h-full items-center gap-1.5 px-3 text-xs font-semibold text-muted hover:text-fg"
+        aria-expanded={!props.collapsed}
+        title={props.collapsed ? 'Unfold' : 'Fold'}
+        onClick={() => toggleGroup(props.label)}
+      >
+        <Icon of={ChevronRight} size={12} class={props.collapsed ? '' : 'rotate-90'} />
+        <Icon of={props.label ? Tag : Tags} size={12} />
+        <span classList={{ italic: !props.label }}>{props.label || 'No label'}</span>
+        <span class="font-normal text-faint tabular-nums">{props.count}</span>
+      </button>
     </div>
   );
 }

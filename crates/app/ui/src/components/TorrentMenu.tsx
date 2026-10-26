@@ -1,4 +1,4 @@
-import { Show } from 'solid-js';
+import { For, Show } from 'solid-js';
 
 import {
   act,
@@ -12,8 +12,42 @@ import {
   torrentMenu,
 } from '../actions';
 import { deleteKeys, isMac, keys } from '../keys';
+import { addLabelTo, allLabels, editLabels, labelCounts } from '../labels';
 import { torrent } from '../torrents';
 import { ContextMenu, MenuItem, MenuSeparator, SubMenu } from './Menu';
+
+/**
+ * Labels for the torrents: each label in use, ticked when they all have it (a
+ * click toggles it on them all), and a new one.
+ */
+function LabelsSubMenu(props: { hashes: string[] }) {
+  const counts = () => labelCounts(props.hashes);
+  const onAll = (label: string) => counts().get(label) === props.hashes.length;
+  return (
+    <SubMenu label="Labels">
+      <For each={allLabels()}>
+        {([label]) => (
+          <MenuItem
+            checkbox
+            checked={onAll(label)}
+            title={
+              !onAll(label) && counts().get(label) ? `On ${counts().get(label)} of ${props.hashes.length}` : undefined
+            }
+            onSelect={() =>
+              void (onAll(label) ? editLabels(props.hashes, [], [label]) : editLabels(props.hashes, [label]))
+            }
+          >
+            {label}
+          </MenuItem>
+        )}
+      </For>
+      <Show when={allLabels().length}>
+        <MenuSeparator />
+      </Show>
+      <MenuItem onSelect={() => void addLabelTo(props.hashes)}>New Label…</MenuItem>
+    </SubMenu>
+  );
+}
 
 /** The right-click menu for torrents (the selection, or the one clicked). Mounted once in App. */
 export function TorrentMenuHost() {
@@ -78,6 +112,7 @@ function TorrentMenu(props: { x: number; y: number; hashes: string[] }) {
       <MenuItem shortcut={keys('mod+L')} onSelect={() => setLocation(props.hashes)}>
         Set Location…
       </MenuItem>
+      <LabelsSubMenu hashes={props.hashes} />
       <MenuItem onSelect={run(() => copyMagnets(props.hashes))}>
         {props.hashes.length === 1 ? 'Copy Magnet Link' : 'Copy Magnet Links'}
       </MenuItem>

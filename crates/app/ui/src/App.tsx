@@ -5,7 +5,7 @@ import { TorrentDialogsHost } from './components/TorrentDialogs';
 import { watchInspector } from './inspector';
 import { AddDialogHost, chooseTorrentFiles, openAdd, watchPaste } from './adder';
 import { onOpenSettings, onZoomMenu } from './api';
-import { shownTorrents } from './browse';
+import { navOrder } from './browse';
 import { ConfirmHost } from './confirm';
 import { isConnected, watchConnection } from './connection';
 import { DropOverlay } from './components/DropOverlay';
@@ -89,7 +89,7 @@ export function App() {
   /** The table's keys: moving and extending the selection, and acting on it. */
   const torrentKeys = (e: KeyboardEvent, target: HTMLElement) => {
     const cmd = e.metaKey || e.ctrlKey;
-    const list = shownTorrents();
+    const list = navOrder();
     const hashes = chosen();
 
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {

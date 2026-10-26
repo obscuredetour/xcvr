@@ -153,6 +153,13 @@ Each phase ends with something runnable on both the Mac and the CachyOS machine.
 - Sidebar label list with counts, with rename and delete across torrents.
 - Edit labels on the selection with autocomplete; labels in the add dialog.
 - Filter, sort and group by label in the table (collapsible group headers).
+- Done:
+  - **Commands:** `labels.rs` holds `edit_labels` (add and remove on the selection), `rename_label` (merges into an existing name) and `delete_label`. Each reads every torrent's labels, works out its new list, and sends one `torrent_set` per distinct result, leaving untouched torrents alone. A container test covers mixed label sets.
+  - **Inspector:** label chips with × to remove. A label only some of the selection has shows as dashed "n/m"; clicking it puts it on all. An input adds labels, comma-separated, with suggestions.
+  - **Right-click → Labels:** a tick shows labels all selected torrents have; clicking toggles them. New Label… is at the bottom.
+  - **Sidebar:** right-click a label to Rename (the name is pre-filled) or Delete (asks first).
+  - **Grouping:** the toggle beside the Labels heading groups the table Gmail-style. A torrent appears under each of its labels, "No label" comes last, and groups fold (remembered). With a label filter on, only that group shows.
+  - **Keyboard:** ↑/↓ and Shift-click follow the grouped order, visiting each torrent once (`navOrder`).
 
 **8. Preferences (must-have)**
 - `session_get/set`: default download dir, incomplete dir, global and alt speed limits + schedule, queue sizes, seeding limits, peer port and limits, encryption, blocklist.

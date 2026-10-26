@@ -7,7 +7,7 @@ import { createMemo, createRoot } from 'solid-js';
 import type { Torrent } from './api';
 import { FILTERS, type FilterId } from './format';
 import { torrents } from './torrents';
-import { labelFilter, query, sort, type SortDir, statusFilter } from './view';
+import { collapsedGroups, groupByLabel, labelFilter, query, sort, type SortDir, statusFilter } from './view';
 
 /** How each sortable column sorts: the value to compare, and which way it starts. */
 export const SORTS: Record<string, { value(t: Torrent): number | string; first: SortDir }> = {
@@ -70,6 +70,60 @@ export const shownTorrents = createRoot(() =>
     const sign = dir === 'asc' ? 1 : -1;
     // Ties by name, so the order is stable as values change.
     return list.sort((a, b) => sign * compare(by.value(a), by.value(b)) || compare(a.name ?? '', b.name ?? ''));
+  }),
+);
+
+/** A row of the table: a label's header (when grouping), or a torrent. */
+export type TableItem =
+  | { kind: 'group'; label: string; count: number; collapsed: boolean }
+  | { kind: 'torrent'; t: Torrent; group: string | null };
+
+/**
+ * What the table shows, top to bottom. Grouped by label, a torrent shows under
+ * each label it has (Gmail-style), and under "No label" ('') when it has none;
+ * labels A to Z, "No label" last. With a label chosen in the sidebar, just that
+ * group shows.
+ */
+export const tableItems = createRoot(() =>
+  createMemo((): TableItem[] => {
+    const list = shownTorrents();
+    if (!groupByLabel()) return list.map((t) => ({ kind: 'torrent', t, group: null }));
+
+    const groups = new Map<string, Torrent[]>();
+    const only = labelFilter();
+    for (const t of list) {
+      for (const label of t.labels?.length ? t.labels : ['']) {
+        if (only !== null && label !== only) continue;
+        const members = groups.get(label);
+        if (members) members.push(t);
+        else groups.set(label, [t]);
+      }
+    }
+    const order = [...groups.keys()].sort((a, b) => (a === '' ? 1 : b === '' ? -1 : collator.compare(a, b)));
+    return order.flatMap((label): TableItem[] => {
+      const members = groups.get(label)!;
+      const collapsed = collapsedGroups().has(label);
+      return [
+        { kind: 'group', label, count: members.length, collapsed },
+        ...(collapsed ? [] : members.map((t): TableItem => ({ kind: 'torrent', t, group: label }))),
+      ];
+    });
+  }),
+);
+
+/** Torrents in the order they're on screen, each once: what ↑/↓ and Shift-click go through. */
+export const navOrder = createRoot(() =>
+  createMemo((): Torrent[] => {
+    if (!groupByLabel()) return shownTorrents();
+    const seen = new Set<string>();
+    const out: Torrent[] = [];
+    for (const item of tableItems()) {
+      if (item.kind === 'torrent' && !seen.has(item.t.hash_string!)) {
+        seen.add(item.t.hash_string!);
+        out.push(item.t);
+      }
+    }
+    return out;
   }),
 );
 

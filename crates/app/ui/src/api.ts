@@ -96,6 +96,13 @@ export const api = {
   setTorrents: (hashes: string[], set: TorrentSet) => invoke<void>('set_torrents', { hashes, set }),
   /** Rename the torrent (`path` its current name) or a file or folder in it (`path` as in its files). */
   renameTorrent: (hash: string, path: string, name: string) => invoke<Renamed>('rename_torrent', { hash, path, name }),
+  /** Add and take away labels, keeping each torrent's others. Resolves to how many changed. */
+  editLabels: (hashes: string[], add: string[], remove: string[]) =>
+    invoke<{ torrents: number }>('edit_labels', { hashes, add, remove }),
+  /** Rename a label on every torrent (merging where `to` is there already). */
+  renameLabel: (from: string, to: string) => invoke<{ torrents: number }>('rename_label', { from, to }),
+  /** Take a label off every torrent. */
+  deleteLabel: (label: string) => invoke<{ torrents: number }>('delete_label', { label }),
   /** Its name before it was renamed, when that's known and differs (else null). */
   originalName: (hash: string) => invoke<string | null>('original_name', { hash }),
   setLocation: (hashes: string[], location: string, moveData: boolean) =>

@@ -155,6 +155,29 @@ export function setLabelFilter(label: string | null): void {
   else storage.set('labelFilter', label);
 }
 
+/** The table grouped by label: a torrent shows under each label it has, and under "No label". */
+const [groupByLabel, setGroupByLabelSignal] = createSignal(storage.get('groupByLabel') === 'on');
+export { groupByLabel };
+
+export function setGroupByLabel(on: boolean): void {
+  setGroupByLabelSignal(on);
+  storage.set('groupByLabel', on ? 'on' : 'off');
+}
+
+/** Groups folded shut, by label ('' for "No label"). */
+const [collapsedGroups, setCollapsedGroups] = createSignal<ReadonlySet<string>>(
+  new Set(storedJson('collapsedGroups', isStrings, [])),
+);
+export { collapsedGroups };
+
+export function toggleGroup(label: string): void {
+  const next = new Set(collapsedGroups());
+  if (next.has(label)) next.delete(label);
+  else next.add(label);
+  setCollapsedGroups(next);
+  storage.set('collapsedGroups', JSON.stringify([...next]));
+}
+
 /** The search box's text (not kept between launches). */
 const [query, setQuery] = createSignal('');
 export { query, setQuery };

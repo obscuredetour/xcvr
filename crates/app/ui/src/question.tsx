@@ -1,7 +1,6 @@
-// A question from a running Magnitide library action (`ui.ask`): choices
-// as buttons, or a line of text. `askUser(...)` resolves to the choice's
-// index, the text, or null when dismissed; <QuestionHost/> (mounted once in
-// App) shows it.
+// A short question: choices as buttons, or a line of text (a label's name).
+// `askUser(...)` resolves to the choice's index, the text, or null when
+// dismissed; <QuestionHost/> (mounted once in App) shows it.
 
 import { createSignal, onMount, Show, For } from 'solid-js';
 
@@ -14,6 +13,8 @@ type Request = {
   choices: string[];
   /** Set for a text question. */
   placeholder: string | null;
+  /** A text question's starting text (selected, to type over). */
+  initial?: string;
   resolve(answer: { choice: number } | { text: string } | null): void;
 };
 
@@ -31,7 +32,7 @@ export function QuestionHost() {
 function QuestionDialog(props: { request: Request }) {
   let dialog!: HTMLDialogElement;
   let first!: HTMLElement;
-  const [text, setText] = createSignal('');
+  const [text, setText] = createSignal(props.request.initial ?? '');
   const done = (answer: { choice: number } | { text: string } | null) => {
     props.request.resolve(answer);
     setRequest(null);
@@ -39,6 +40,7 @@ function QuestionDialog(props: { request: Request }) {
   onMount(() => {
     dialog.showModal();
     first.focus();
+    if (first instanceof HTMLInputElement) first.select();
   });
   return (
     <dialog

@@ -14,6 +14,7 @@ import { torrent } from '../torrents';
 import { INSPECTOR_WIDTH, inspectorWidth, setInspectorWidth } from '../view';
 import { widthFlags } from '../widths';
 import { Icon } from './Icon';
+import { LabelEditor } from './LabelEditor';
 import { FilesTab } from './inspector/Files';
 import { GeneralTab } from './inspector/General';
 import { OptionsTab } from './inspector/Options';
@@ -105,6 +106,9 @@ function One() {
             </p>
           )}
         </Show>
+        <div class="mt-2.5">
+          <LabelEditor hashes={[hash()]} />
+        </div>
         <div class="mt-3 flex flex-wrap items-center gap-1.5">
           <button class={smallButton} title={keys('mod+ArrowDown')} onClick={() => void openHere(hash(), null, false)}>
             <Icon of={SquareArrowOutUpRight} size={12} />
@@ -188,6 +192,9 @@ function Several(props: { count: number }) {
       <p class="mt-1 text-xs text-muted">
         {formatSize(done())} of {formatSize(size())} downloaded
       </p>
+      <div class="mt-3">
+        <LabelEditor hashes={[...selectedHashes()]} />
+      </div>
       <div class="mt-4 flex flex-wrap gap-1.5">
         <button class={smallButton} onClick={() => void act('start')}>
           Resume
