@@ -29,6 +29,9 @@ ts-rs = { version = "12.0.1", features = ["no-serde-warnings"] }
 [target.'cfg(target_os = "linux")'.dependencies]
 # Already in the tree through gtk; for set_prgname, which names the window for the desktop (main).
 glib = "0.18"
+# Not used directly: holds tauri-plugin-deep-link's rust-ini at 0.21.1. 0.21.3 added fields to
+# ParseOption, which deep-link 2.6.2 builds as a struct literal, so it doesn't compile on Linux.
+rust-ini = "=0.21.1"
 
 [dev-dependencies]
 # mock_app, for the poller's tests.
