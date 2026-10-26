@@ -3,7 +3,7 @@ name = "transmission"
 version.workspace = true
 edition = "2024"
 description = "A typed client for Transmission's RPC (JSON-RPC 2.0, Transmission 4.1 and later)"
-license = "GPL-3.0-or-later"
+license = "MIT"
 publish = false
 
 [dependencies]

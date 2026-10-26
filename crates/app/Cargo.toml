@@ -3,7 +3,7 @@ name = "xcvr"
 version.workspace = true
 edition = "2024"
 description = "Transceiver: a desktop client for Transmission"
-license = "GPL-3.0-or-later"
+license = "MIT"
 publish = false
 
 [dependencies]

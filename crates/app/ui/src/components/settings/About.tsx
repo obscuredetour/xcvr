@@ -9,7 +9,7 @@ export function About() {
       <h3 class="mt-4 font-serif text-2xl font-semibold">Transceiver</h3>
       <Show when={version()}>{(v) => <div class="mt-1 text-xs text-muted">Version {v()}</div>}</Show>
       <p class="mt-4 max-w-sm text-sm text-muted">A desktop client for Transmission.</p>
-      <p class="mt-4 text-xs text-faint">Licensed under the GNU GPL v3 or later.</p>
+      <p class="mt-4 text-xs text-faint">Released under the MIT License.</p>
     </div>
   );
 }

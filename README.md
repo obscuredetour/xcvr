@@ -42,3 +42,7 @@ XCVR_HOST=mac-mini.local XCVR_USER=… XCVR_PASS=… cargo test -p transmission 
 | `crates/app/ui` | Solid + TypeScript + Tailwind v4 UI. Reaches the backend only through `src/api.ts` |
 | `crates/transmission` | The RPC client (JSON-RPC 2.0, Transmission 4.1+) and its types, with no Tauri dependency |
 | `scripts/test-container.sh` | Runs the client's integration tests against Transmission in a container |
+
+## License
+
+MIT, see [LICENSE](LICENSE). The Catppuccin and Dracula themes' colours come from those projects, also MIT.
