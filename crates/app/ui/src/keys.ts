@@ -47,6 +47,7 @@ export const SHORTCUTS: { group: string; items: Shortcut[] }[] = [
     items: [
       { keys: ['mod+alt+S'], action: 'Show / hide the sidebar' },
       { keys: ['mod+I'], action: 'Show / hide the inspector' },
+      { keys: ['mod+shift+T'], action: 'Slower speeds (the turtle) on / off' },
       { keys: ['ArrowLeft', 'ArrowRight'], action: 'Resize the inspector (its edge focused)' },
     ],
   },

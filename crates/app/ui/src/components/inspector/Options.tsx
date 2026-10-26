@@ -1,7 +1,8 @@
-import { createEffect, createSignal, on, Show } from 'solid-js';
+import { Show } from 'solid-js';
 
 import { api, errorMessage, type Torrent, type TorrentSet } from '../../api';
 import { toast } from '../../toast';
+import { NumberField } from '../Fields';
 import { Segmented, Toggle } from '../settings/parts';
 import { Section } from './parts';
 
@@ -114,52 +115,6 @@ function Row(props: { label: string; hint?: string; children: import('solid-js')
       </div>
       <div class="flex flex-none items-center gap-2">{props.children}</div>
     </div>
-  );
-}
-
-/** A number that's sent on Enter or leaving the field, when it changed and makes sense. */
-function NumberField(props: {
-  label: string;
-  value: number;
-  step: number;
-  disabled?: boolean;
-  onCommit(n: number): void;
-}) {
-  const [text, setText] = createSignal(String(props.value));
-  // Follow the torrent while this isn't being typed in.
-  let editing = false;
-  createEffect(
-    on(
-      () => props.value,
-      (v) => !editing && setText(String(v)),
-    ),
-  );
-  const commit = () => {
-    editing = false;
-    const n = Number(text());
-    if (text().trim() !== '' && Number.isFinite(n) && n >= 0 && n !== props.value) props.onCommit(n);
-    else setText(String(props.value));
-  };
-  return (
-    <input
-      type="number"
-      min="0"
-      step={props.step}
-      aria-label={props.label}
-      disabled={props.disabled}
-      class="h-7 w-20 rounded-control border border-line bg-field px-2 text-right text-xs tabular-nums outline-none focus:border-focus disabled:opacity-50"
-      value={text()}
-      onFocus={() => (editing = true)}
-      onInput={(e) => setText(e.currentTarget.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') e.currentTarget.blur();
-        else if (e.key === 'Escape') {
-          setText(String(props.value));
-          e.currentTarget.blur();
-        }
-      }}
-    />
   );
 }
 

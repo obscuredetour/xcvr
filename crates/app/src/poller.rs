@@ -6,7 +6,8 @@
 //! - `torrents` ([`transmission::Diff`]) when the list changes,
 //! - `stats` ([`transmission::SessionStats`]) when the speeds or counts change,
 //! - `details` ([`transmission::Torrent`], every DETAIL field) when the torrent
-//!   the inspector follows changes (see [`Poller::follow`]).
+//!   the inspector follows changes (see [`Poller::follow`]),
+//! - `session` ([`transmission::Session`], the turtle and speed limits) when they change.
 //!
 //! Every poll fetches every torrent's list fields (tens of torrents makes that
 //! cheap), so there's no `recently_active` bookkeeping to go stale.
@@ -17,13 +18,29 @@ use std::time::{Duration, SystemTime};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tokio::sync::mpsc;
-use transmission::{Client, Config, Diff, Error, Ids, SessionField, SessionStats, Snapshot, Torrent, TorrentField};
+use transmission::{
+    Client, Config, Diff, Error, Ids, Session, SessionField, SessionStats, Snapshot, Torrent, TorrentField,
+};
 use ts_rs::TS;
 
 pub const CONNECTION_EVENT: &str = "connection";
 pub const TORRENTS_EVENT: &str = "torrents";
 pub const STATS_EVENT: &str = "stats";
 pub const DETAILS_EVENT: &str = "details";
+pub const SESSION_EVENT: &str = "session";
+
+/// The session settings the window shows all the time (the turtle and the speed
+/// limits), polled with the list since the schedule or another client can change them.
+const SESSION_FIELDS: &[SessionField] = &[
+    SessionField::AltSpeedEnabled,
+    SessionField::AltSpeedDown,
+    SessionField::AltSpeedUp,
+    SessionField::AltSpeedTimeEnabled,
+    SessionField::SpeedLimitDown,
+    SessionField::SpeedLimitDownEnabled,
+    SessionField::SpeedLimitUp,
+    SessionField::SpeedLimitUpEnabled,
+];
 
 /// How often to poll while the window is showing, and while it's hidden or minimized.
 const VISIBLE_INTERVAL: Duration = Duration::from_millis(1500);
@@ -89,6 +106,8 @@ struct Shared {
     /// The torrent the inspector shows (by hash), and its details as last sent.
     followed: Mutex<Option<String>>,
     details: Mutex<Option<Torrent>>,
+    /// SESSION_FIELDS as last sent.
+    session: Mutex<Option<Session>>,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -130,6 +149,11 @@ impl Poller {
 
     pub fn stats(&self) -> Option<SessionStats> {
         lock(&self.shared.stats).clone()
+    }
+
+    /// The turtle and speed limits as of the last poll.
+    pub fn session(&self) -> Option<Session> {
+        lock(&self.shared.session).clone()
     }
 
     /// The connected client, for commands (start, stop, add…).
@@ -223,6 +247,7 @@ impl<R: Runtime> Task<R> {
         *lock(&self.shared.stats) = None;
         *lock(&self.shared.followed) = None;
         *lock(&self.shared.details) = None;
+        *lock(&self.shared.session) = None;
         // The old host's torrents go from the UI straight away.
         let _ = self.app.emit(TORRENTS_EVENT, Diff { reset: true, ..Diff::default() });
 
@@ -258,8 +283,12 @@ impl<R: Runtime> Task<R> {
             self.set_state(ConnectionState::Connected { host: self.label.clone(), version });
         }
 
-        let (list, stats) = tokio::try_join!(client.torrent_get(&Ids::All, TorrentField::LIST), client.session_stats())
-            .map_err(|e| self.failed(&e))?;
+        let (list, stats, session) = tokio::try_join!(
+            client.torrent_get(&Ids::All, TorrentField::LIST),
+            client.session_stats(),
+            client.session_get(SESSION_FIELDS),
+        )
+        .map_err(|e| self.failed(&e))?;
         self.failures = 0;
 
         let diff = lock(&self.shared.snapshot).apply(list.torrents);
@@ -270,6 +299,11 @@ impl<R: Runtime> Task<R> {
         if changed {
             let _ = self.app.emit(STATS_EVENT, &stats);
             *lock(&self.shared.stats) = Some(stats);
+        }
+        let changed = lock(&self.shared.session).as_ref() != Some(&session);
+        if changed {
+            let _ = self.app.emit(SESSION_EVENT, &session);
+            *lock(&self.shared.session) = Some(session);
         }
 
         // The inspector's torrent, in full. A failure here isn't a lost connection

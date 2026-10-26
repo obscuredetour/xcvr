@@ -1,5 +1,5 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { onCleanup, onMount } from 'solid-js';
+import { onCleanup, onMount, Show } from 'solid-js';
 import PanelLeft from 'lucide-solid/icons/panel-left';
 import PanelRight from 'lucide-solid/icons/panel-right';
 import Pause from 'lucide-solid/icons/pause';
@@ -8,11 +8,12 @@ import Plus from 'lucide-solid/icons/plus';
 import Search from 'lucide-solid/icons/search';
 import Settings from 'lucide-solid/icons/settings';
 import Trash from 'lucide-solid/icons/trash';
+import Turtle from 'lucide-solid/icons/turtle';
 import X from 'lucide-solid/icons/x';
 
 import { act, chosen, isRunning, remove } from '../actions';
 import { openAdd } from '../adder';
-import { isConnected } from '../connection';
+import { isConnected, session, setTurtle } from '../connection';
 import { deleteKeys } from '../keys';
 import { torrent } from '../torrents';
 import type { SettingsSection } from './settings/Settings';
@@ -194,6 +195,21 @@ export function TopBar(props: Props) {
       </div>
       <SearchField searchRef={props.searchRef} />
       <div class="flex items-center gap-1 justify-self-end" data-tauri-drag-region>
+        <Show when={isConnected() && session()}>
+          {(s) => (
+            <button
+              class={`${iconButton} aria-pressed:bg-highlight aria-pressed:text-accent`}
+              aria-pressed={!!s().alt_speed_enabled}
+              aria-label="Slower speeds"
+              title={`${s().alt_speed_enabled ? 'Slower speeds are on' : 'Slower speeds'}: ↓ ${s().alt_speed_down ?? 0} ↑ ${s().alt_speed_up ?? 0} kB/s${
+                s().alt_speed_time_enabled ? ', on a schedule' : ''
+              } (${keys('mod+shift+T')})`}
+              onClick={() => void setTurtle(!s().alt_speed_enabled)}
+            >
+              <Icon of={Turtle} size={16} />
+            </button>
+          )}
+        </Show>
         <button
           class={iconButton}
           aria-pressed={inspectorOpen()}

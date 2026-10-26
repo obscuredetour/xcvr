@@ -1,14 +1,36 @@
-// The connection to Transmission and the session's speeds, as the poller
-// reports them (crates/app/src/poller.rs). Read-only here: Settings changes
-// the connection through api.saveConnection.
+// The connection to Transmission, the session's speeds, and the turtle and
+// speed limits, as the poller reports them (crates/app/src/poller.rs).
+// Read-only here: Settings changes them through the api.
 
 import { createSignal } from 'solid-js';
 
-import { api, type ConnectionState, onConnection, onStats, type SessionStats } from './api';
+import {
+  api,
+  type ConnectionState,
+  errorMessage,
+  onConnection,
+  onSession,
+  onStats,
+  type Session,
+  type SessionStats,
+} from './api';
+import { toast } from './toast';
 
 const [connection, setConnection] = createSignal<ConnectionState>({ state: 'notConfigured' });
 const [stats, setStats] = createSignal<SessionStats | null>(null);
-export { connection, stats };
+/** The turtle (alternative speeds) and the speed limits. */
+const [session, setSession] = createSignal<Session | null>(null);
+export { connection, session, stats };
+
+/** Switch the turtle; with a schedule on, this holds until the schedule next turns. */
+export async function setTurtle(on: boolean): Promise<void> {
+  setSession((s) => (s ? { ...s, alt_speed_enabled: on } : s));
+  try {
+    setSession(await api.setSession({ alt_speed_enabled: on }));
+  } catch (err) {
+    toast(errorMessage(err), { error: true });
+  }
+}
 
 export const isConnected = () => connection().state === 'connected';
 
@@ -60,9 +82,10 @@ export const described = () => describe(connection());
 
 /** Follow the poller: events first, then the current state, so nothing is missed in between. */
 export async function watchConnection(): Promise<() => void> {
-  const offs = await Promise.all([onConnection(setConnection), onStats(setStats)]);
-  const [state, current] = await Promise.all([api.connectionState(), api.sessionStats()]);
+  const offs = await Promise.all([onConnection(setConnection), onStats(setStats), onSession(setSession)]);
+  const [state, current, brief] = await Promise.all([api.connectionState(), api.sessionStats(), api.sessionBrief()]);
   setConnection(state);
   setStats(current);
+  setSession(brief);
   return () => offs.forEach((off) => off());
 }

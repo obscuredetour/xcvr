@@ -4,7 +4,9 @@ use serde::{Deserialize, Serialize};
 
 /// Session settings, with only the fields that were asked for. Speeds are kB/s,
 /// times of day are minutes after midnight.
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export, optional_fields))]
 #[serde(default)]
 pub struct Session {
     pub alt_speed_down: Option<i64>,
@@ -132,7 +134,9 @@ pub enum SessionField {
 }
 
 /// Changes to the session's settings (`session_set`): only the fields that are Some are sent.
-#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export, optional_fields))]
+#[serde(default)]
 pub struct SessionSet {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub alt_speed_down: Option<i64>,
@@ -238,6 +242,7 @@ pub struct SessionSet {
 
 /// Peer connection encryption. 4.1 renamed `tolerated` to `allowed`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(rename_all = "snake_case")]
 pub enum Encryption {
     Required,
@@ -250,6 +255,7 @@ pub enum Encryption {
 
 /// How the host formats sizes and speeds (what a kB is).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(default)]
 pub struct Units {
     pub speed_units: Vec<String>,
@@ -297,6 +303,17 @@ pub struct FreeSpace {
     pub size_bytes: i64,
     /// The volume's capacity in bytes.
     pub total_size: i64,
+}
+
+/// `port_test`: whether the peer port can be reached from the internet (as
+/// Transmission's port-check service sees it).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
+#[serde(default)]
+pub struct PortTest {
+    pub port_is_open: bool,
+    /// `ipv4` or `ipv6`, when Transmission could tell.
+    pub ip_protocol: Option<String>,
 }
 
 #[cfg(test)]

@@ -164,6 +164,12 @@ Each phase ends with something runnable on both the Mac and the CachyOS machine.
 **8. Preferences (must-have)**
 - `session_get/set`: default download dir, incomplete dir, global and alt speed limits + schedule, queue sizes, seeding limits, peer port and limits, encryption, blocklist.
 - Alt-speed (turtle) toggle in the top bar.
+- Done:
+  - **Settings › Transmission:** downloading, speed, slower speeds with schedule (times and days), queue, seeding, network (port with Test Port, forwarding, encryption, peer limits, DHT/PEX/LPD) and blocklist (Update Now). Each change applies at once. `set_session` answers with every setting, since one change can move others.
+  - **Live state:** the poller also follows the turtle and speed limits (`session` events), since the schedule or another computer can change them.
+  - **Turtle:** a button in the toolbar (⇧⌘T). The status bar shows the limit in force beside each speed.
+  - **Schedule behaviour:** turning the schedule on applies it at once, switching the turtle by the clock. Switching the turtle by hand then holds until the schedule next turns. The container test showed this.
+  - **Client:** `port_test` and `blocklist_update`. Session types are exported to TypeScript.
 
 **9. Tray, notifications, handlers**
 - Tray menu: speeds, active count, pause all / resume all, add magnet from clipboard, show window, quit. On Linux, tray clicks don't fire events, so speeds go in the menu and tooltip.

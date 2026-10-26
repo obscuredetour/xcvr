@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::client::{Client, NoParams};
 use crate::error::Result;
 use crate::ids::Ids;
-use crate::session::{FreeSpace, Session, SessionField, SessionSet, SessionStats};
+use crate::session::{FreeSpace, PortTest, Session, SessionField, SessionSet, SessionStats};
 use crate::torrent::{LimitMode, Priority, TorrentField, TorrentGet};
 
 #[derive(Serialize)]
@@ -255,6 +255,27 @@ impl Client {
 
     pub async fn free_space(&self, path: &str) -> Result<FreeSpace> {
         self.call("free_space", &FreeSpaceParams { path }).await
+    }
+
+    /// Ask Transmission's port-check service whether the peer port is reachable
+    /// (over IPv4 when `ipv4` is set; whichever it connects with otherwise).
+    pub async fn port_test(&self, ipv4: bool) -> Result<PortTest> {
+        #[derive(Serialize)]
+        struct Params {
+            #[serde(skip_serializing_if = "Option::is_none")]
+            ip_protocol: Option<&'static str>,
+        }
+        self.call("port_test", &Params { ip_protocol: ipv4.then_some("ipv4") }).await
+    }
+
+    /// Fetch the blocklist from its URL now. Returns how many rules it has.
+    pub async fn blocklist_update(&self) -> Result<i64> {
+        #[derive(Deserialize)]
+        struct Answer {
+            blocklist_size: i64,
+        }
+        let a: Answer = self.call("blocklist_update", &NoParams {}).await?;
+        Ok(a.blocklist_size)
     }
 
     pub async fn torrent_get(&self, ids: &Ids, fields: &[TorrentField]) -> Result<TorrentGet> {

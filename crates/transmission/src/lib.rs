@@ -22,7 +22,9 @@ pub use error::{Error, Result, RpcCode};
 pub use ids::{Ids, TorrentId};
 pub use metainfo::{BadMetainfo, Metainfo, read_metainfo};
 pub use methods::{AddOutcome, AddTorrent, AddedTorrent, QueueMove, Renamed, TorrentSet, TorrentSource};
-pub use session::{Encryption, FreeSpace, Session, SessionField, SessionSet, SessionStats, StatsTotals, Units};
+pub use session::{
+    Encryption, FreeSpace, PortTest, Session, SessionField, SessionSet, SessionStats, StatsTotals, Units,
+};
 pub use torrent::{
     File, FileStat, LimitMode, Peer, PeersFrom, Priority, Status, Torrent, TorrentError, TorrentField, TorrentGet,
     Tracker, TrackerStat, label,

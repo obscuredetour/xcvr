@@ -15,7 +15,10 @@ import type { FreeSpace } from './bindings/FreeSpace';
 import type { MappingView } from './bindings/MappingView';
 import type { Metainfo } from './bindings/Metainfo';
 import type { PathMapping } from './bindings/PathMapping';
+import type { PortTest } from './bindings/PortTest';
 import type { Renamed } from './bindings/Renamed';
+import type { Session } from './bindings/Session';
+import type { SessionSet } from './bindings/SessionSet';
 import type { TorrentAction } from './bindings/TorrentAction';
 import type { TorrentSet } from './bindings/TorrentSet';
 import type { ConnectionState } from './bindings/ConnectionState';
@@ -38,8 +41,11 @@ export type {
   MappingView,
   Metainfo,
   PathMapping,
+  PortTest,
   Problem,
   Profile,
+  Session,
+  SessionSet,
   SessionStats,
   TestResult,
   Torrent,
@@ -96,6 +102,15 @@ export const api = {
   setTorrents: (hashes: string[], set: TorrentSet) => invoke<void>('set_torrents', { hashes, set }),
   /** Rename the torrent (`path` its current name) or a file or folder in it (`path` as in its files). */
   renameTorrent: (hash: string, path: string, name: string) => invoke<Renamed>('rename_torrent', { hash, path, name }),
+  /** Every Transmission setting. */
+  sessionSettings: () => invoke<Session>('session_settings'),
+  /** Change settings; resolves to all of them as they are now. */
+  setSession: (set: SessionSet) => invoke<Session>('set_session', { set }),
+  /** The turtle and speed limits as of the last poll (then `session` events). */
+  sessionBrief: () => invoke<Session | null>('session_brief'),
+  testPort: () => invoke<PortTest>('test_port'),
+  /** Fetch the blocklist now; resolves to how many rules it has. */
+  updateBlocklist: () => invoke<number>('update_blocklist'),
   /** Add and take away labels, keeping each torrent's others. Resolves to how many changed. */
   editLabels: (hashes: string[], add: string[], remove: string[]) =>
     invoke<{ torrents: number }>('edit_labels', { hashes, add, remove }),
@@ -113,6 +128,10 @@ export const api = {
   openTorrent: (hash: string, file: number | null, reveal: boolean) =>
     invoke<void>('open_torrent', { hash, file, reveal }),
 };
+
+export function onSession(handler: (s: Session) => void): Promise<UnlistenFn> {
+  return listen<Session>('session', (e) => handler(e.payload));
+}
 
 export function onDetails(handler: (t: Torrent) => void): Promise<UnlistenFn> {
   return listen<Torrent>('details', (e) => handler(e.payload));

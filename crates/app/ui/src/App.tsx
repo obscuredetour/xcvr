@@ -7,7 +7,7 @@ import { AddDialogHost, chooseTorrentFiles, openAdd, watchPaste } from './adder'
 import { onOpenSettings, onZoomMenu } from './api';
 import { navOrder } from './browse';
 import { ConfirmHost } from './confirm';
-import { isConnected, watchConnection } from './connection';
+import { isConnected, session, setTurtle, watchConnection } from './connection';
 import { DropOverlay } from './components/DropOverlay';
 import { Inspector } from './components/Inspector';
 import { TorrentMenuHost } from './components/TorrentMenu';
@@ -64,6 +64,12 @@ export function App() {
     if (cmd && e.altKey && e.code === 'KeyS') {
       e.preventDefault();
       setSidebarOpen(!sidebarOpen());
+      return;
+    }
+    // ⇧⌘T: the turtle. `code`, since Shift changes the key.
+    if (cmd && e.shiftKey && e.code === 'KeyT' && session()) {
+      e.preventDefault();
+      void setTurtle(!session()!.alt_speed_enabled);
       return;
     }
     if (cmd && !e.altKey && e.key === 'i') {

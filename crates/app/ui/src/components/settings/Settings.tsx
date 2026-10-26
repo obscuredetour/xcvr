@@ -7,6 +7,7 @@ import FolderSync from 'lucide-solid/icons/folder-sync';
 import Keyboard from 'lucide-solid/icons/keyboard';
 import Palette from 'lucide-solid/icons/palette';
 import Server from 'lucide-solid/icons/server';
+import SlidersHorizontal from 'lucide-solid/icons/sliders-horizontal';
 import X from 'lucide-solid/icons/x';
 
 import { backdropDismiss } from '../../backdrop';
@@ -17,8 +18,9 @@ import { ConnectionSettings } from './Connection';
 import { PathSettings } from './Paths';
 import { ShortcutSettings } from './Shortcuts';
 import { ThemeSettings } from './Themes';
+import { TransmissionSettings } from './Transmission';
 
-export type SettingsSection = 'appearance' | 'themes' | 'connection' | 'paths' | 'shortcuts' | 'about';
+export type SettingsSection = 'appearance' | 'themes' | 'connection' | 'transmission' | 'paths' | 'shortcuts' | 'about';
 
 type Entry = { id: SettingsSection; label: string; icon: Component<LucideProps> };
 
@@ -30,6 +32,7 @@ const SECTIONS: Entry[][] = [
   ],
   [
     { id: 'connection', label: 'Connection', icon: Server },
+    { id: 'transmission', label: 'Transmission', icon: SlidersHorizontal },
     { id: 'paths', label: 'Paths', icon: FolderSync },
   ],
   [
@@ -115,6 +118,9 @@ export function SettingsDialog(props: { onClose(): void; section?: SettingsSecti
             </Match>
             <Match when={section() === 'connection'}>
               <ConnectionSettings />
+            </Match>
+            <Match when={section() === 'transmission'}>
+              <TransmissionSettings />
             </Match>
             <Match when={section() === 'paths'}>
               <PathSettings />

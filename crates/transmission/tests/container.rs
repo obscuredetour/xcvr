@@ -72,6 +72,82 @@ async fn session_set_round_trips() {
 
 #[tokio::test]
 #[ignore = "needs a Transmission container: scripts/test-container.sh"]
+async fn settings_page_fields_round_trip() {
+    use transmission::Encryption;
+
+    let c = client();
+    let before = c.session_get(&[]).await.unwrap();
+    let set = SessionSet {
+        alt_speed_time_enabled: Some(true),
+        alt_speed_time_begin: Some(22 * 60),
+        alt_speed_time_end: Some(7 * 60),
+        alt_speed_time_day: Some(62), // weekdays
+        speed_limit_down_enabled: Some(true),
+        speed_limit_down: Some(4321),
+        download_queue_size: Some(4),
+        seed_queue_enabled: Some(true),
+        seed_ratio_limited: Some(true),
+        seed_ratio_limit: Some(1.5),
+        idle_seeding_limit: Some(45),
+        encryption: Some(Encryption::Required),
+        peer_limit_per_torrent: Some(77),
+        incomplete_dir_enabled: Some(true),
+        incomplete_dir: Some("/tmp/incomplete".into()),
+        ..Default::default()
+    };
+    c.session_set(&set).await.unwrap();
+    // Turning a schedule on applies it at once (the turtle goes on or off by the clock),
+    // so the turtle is switched by hand after; that holds until the schedule next turns.
+    c.session_set(&SessionSet { alt_speed_enabled: Some(true), ..Default::default() }).await.unwrap();
+    let after = c.session_get(&[]).await.unwrap();
+    assert_eq!(after.alt_speed_enabled, Some(true));
+    assert_eq!(after.alt_speed_time_enabled, Some(true));
+    assert_eq!(after.alt_speed_time_begin, Some(22 * 60));
+    assert_eq!(after.alt_speed_time_day, Some(62));
+    assert_eq!(after.speed_limit_down, Some(4321));
+    assert_eq!(after.download_queue_size, Some(4));
+    assert_eq!(after.seed_ratio_limit, Some(1.5));
+    assert_eq!(after.idle_seeding_limit, Some(45));
+    assert_eq!(after.encryption, Some(Encryption::Required));
+    assert_eq!(after.peer_limit_per_torrent, Some(77));
+    assert_eq!(after.incomplete_dir.as_deref(), Some("/tmp/incomplete"));
+
+    // Back as it was.
+    let restore = SessionSet {
+        alt_speed_enabled: before.alt_speed_enabled,
+        alt_speed_time_enabled: before.alt_speed_time_enabled,
+        alt_speed_time_begin: before.alt_speed_time_begin,
+        alt_speed_time_end: before.alt_speed_time_end,
+        alt_speed_time_day: before.alt_speed_time_day,
+        speed_limit_down_enabled: before.speed_limit_down_enabled,
+        speed_limit_down: before.speed_limit_down,
+        download_queue_size: before.download_queue_size,
+        seed_queue_enabled: before.seed_queue_enabled,
+        seed_ratio_limited: before.seed_ratio_limited,
+        seed_ratio_limit: before.seed_ratio_limit,
+        idle_seeding_limit: before.idle_seeding_limit,
+        encryption: before.encryption,
+        peer_limit_per_torrent: before.peer_limit_per_torrent,
+        incomplete_dir_enabled: before.incomplete_dir_enabled,
+        incomplete_dir: before.incomplete_dir,
+        ..Default::default()
+    };
+    c.session_set(&restore).await.unwrap();
+
+    // The port test and blocklist update answer (the container may have no internet:
+    // then it's an RPC error, not a decoding failure).
+    match c.port_test(true).await {
+        Ok(_) | Err(Error::Rpc { .. }) => {}
+        Err(e) => panic!("port_test: {e:?}"),
+    }
+    match c.blocklist_update().await {
+        Ok(_) | Err(Error::Rpc { .. }) => {}
+        Err(e) => panic!("blocklist_update: {e:?}"),
+    }
+}
+
+#[tokio::test]
+#[ignore = "needs a Transmission container: scripts/test-container.sh"]
 async fn stats_and_free_space() {
     let c = client();
     let stats = c.session_stats().await.unwrap();

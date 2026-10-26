@@ -9,6 +9,7 @@ mod mappings;
 mod menu;
 mod originals;
 mod poller;
+mod prefs;
 mod profiles;
 mod secrets;
 
@@ -80,6 +81,11 @@ fn main() {
             labels::edit_labels,
             labels::rename_label,
             labels::delete_label,
+            prefs::session_settings,
+            prefs::set_session,
+            prefs::session_brief,
+            prefs::test_port,
+            prefs::update_blocklist,
             inspect::set_location,
             inspect::path_mappings,
             inspect::set_path_mappings,
