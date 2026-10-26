@@ -15,7 +15,7 @@ use ts_rs::TS;
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PathMapping {
-    /// On the host, e.g. `/Users/jamie/Downloads`.
+    /// On the host, e.g. `/Users/alice/Downloads`.
     pub host: String,
     /// Here, e.g. `/Volumes/Downloads` or `/mnt/mini/Downloads`.
     pub local: String,

@@ -24,6 +24,7 @@ import type { Session } from './bindings/Session';
 import type { SessionSet } from './bindings/SessionSet';
 import type { TorrentAction } from './bindings/TorrentAction';
 import type { TorrentSet } from './bindings/TorrentSet';
+import type { TorrentsFolder } from './bindings/TorrentsFolder';
 import type { ConnectionState } from './bindings/ConnectionState';
 import type { Diff } from './bindings/Diff';
 import type { Problem } from './bindings/Problem';
@@ -57,6 +58,7 @@ export type {
   Torrent,
   TorrentAction,
   TorrentSet,
+  TorrentsFolder,
 };
 
 /** A readable message from whatever a command rejected with (a Problem, a string, an Error). */
@@ -130,6 +132,8 @@ export const api = {
     invoke<void>('set_location', { hashes, location, moveData }),
   pathMappings: () => invoke<MappingView[]>('path_mappings'),
   setPathMappings: (list: PathMapping[]) => invoke<MappingView[]>('set_path_mappings', { list }),
+  /** Where the host keeps its .torrent copies (original names), and whether a mapping reaches it. */
+  torrentsFolder: () => invoke<TorrentsFolder | null>('torrents_folder'),
   /** Open a torrent (or its file at index `file`) here, or reveal it, through the path mappings. */
   openTorrent: (hash: string, file: number | null, reveal: boolean) =>
     invoke<void>('open_torrent', { hash, file, reveal }),

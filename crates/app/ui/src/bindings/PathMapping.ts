@@ -5,7 +5,7 @@
  */
 export type PathMapping = { 
 /**
- * On the host, e.g. `/Users/jamie/Downloads`.
+ * On the host, e.g. `/Users/alice/Downloads`.
  */
 host: string, 
 /**

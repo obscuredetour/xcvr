@@ -159,6 +159,45 @@ pub fn set_path_mappings(list: Vec<PathMapping>, mappings: State<'_, Mappings>) 
     Ok(views(mappings.set(list)?))
 }
 
+/// Where the host keeps its copies of the .torrent files, which still hold each torrent's
+/// name from before any rename, and whether the path mappings reach it from here.
+#[derive(Debug, Clone, PartialEq, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TorrentsFolder {
+    /// The folder on the host.
+    pub host: String,
+    /// Where it is here, through the mappings (null when none covers it).
+    pub local: Option<String>,
+    /// A torrent's copy can be read here, so original names show.
+    pub readable: bool,
+}
+
+/// The folder holding a torrent's copy (`torrent_file`), as it maps here.
+fn folder_of(torrent_file: &str, mappings: &Mappings) -> Option<(TorrentsFolder, Option<std::path::PathBuf>)> {
+    let host = Path::new(torrent_file).parent()?.to_string_lossy().into_owned();
+    let local = mappings.to_local(&host).map(|p| p.to_string_lossy().into_owned());
+    Some((TorrentsFolder { host, local, readable: false }, mappings.to_local(torrent_file)))
+}
+
+/// The host's torrents folder, from one of its torrents (null with no torrents).
+#[tauri::command]
+pub async fn torrents_folder(
+    poller: State<'_, Poller>,
+    mappings: State<'_, Mappings>,
+) -> Result<Option<TorrentsFolder>, Problem> {
+    let Some(hash) = poller.torrents().into_iter().find_map(|t| t.hash_string) else { return Ok(None) };
+    let client = client(&poller)?;
+    let got = client.torrent_get(&Ids::hashes([hash.as_str()]), &[TorrentField::TorrentFile]).await.map_err(problem)?;
+    let Some(file) = got.torrents.into_iter().next().and_then(|t| t.torrent_file) else { return Ok(None) };
+    let Some((mut folder, local_file)) = folder_of(&file, &mappings) else { return Ok(None) };
+    if let Some(path) = local_file {
+        // Off the main thread: it may be on a network share.
+        folder.readable = tauri::async_runtime::spawn_blocking(move || path.is_file()).await.unwrap_or(false);
+    }
+    Ok(Some(folder))
+}
+
 /// Open a torrent (or one of its files, by index) here, or reveal it in Finder or the
 /// file manager, through the path mappings.
 #[tauri::command]
@@ -211,4 +250,31 @@ pub async fn open_torrent(
         opener.open_path(found.to_string_lossy(), None::<&str>)
     };
     result.map_err(|e| Problem::from(format!("Couldn't open {}: {e}", found.display())))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_torrents_folder_maps_like_any_other() {
+        let path = std::env::temp_dir().join(format!("xcvr-folder-test-{}.json", std::process::id()));
+        let mappings = Mappings::load(path.clone());
+        let file = "/Users/alice/Library/Application Support/Transmission/Torrents/abc.torrent";
+
+        let (folder, local_file) = folder_of(file, &mappings).unwrap();
+        assert_eq!(folder.host, "/Users/alice/Library/Application Support/Transmission/Torrents");
+        assert_eq!((folder.local, local_file), (None, None));
+
+        mappings
+            .set(vec![PathMapping {
+                host: "/Users/alice/Library/Application Support/Transmission".into(),
+                local: "/Volumes/Transmission".into(),
+            }])
+            .unwrap();
+        let (folder, local_file) = folder_of(file, &mappings).unwrap();
+        assert_eq!(folder.local.as_deref(), Some("/Volumes/Transmission/Torrents"));
+        assert_eq!(local_file.as_deref(), Some(Path::new("/Volumes/Transmission/Torrents/abc.torrent")));
+        let _ = std::fs::remove_file(path);
+    }
 }

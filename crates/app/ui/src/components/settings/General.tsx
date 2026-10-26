@@ -59,7 +59,7 @@ export function GeneralSettings() {
               </Row>
               <Show when={g().trayNote}>
                 {(note) => (
-                  <Callout icon={CircleAlert} tone="warning" class="mt-3">
+                  <Callout icon={CircleAlert} tone="warning" class="my-3">
                     {note()}
                   </Callout>
                 )}
@@ -92,7 +92,7 @@ export function GeneralSettings() {
               </Row>
               <Show when={g().shortcutNote}>
                 {(note) => (
-                  <Callout icon={CircleAlert} tone="warning" class="mt-3">
+                  <Callout icon={CircleAlert} tone="warning" class="my-3">
                     {note()}
                   </Callout>
                 )}

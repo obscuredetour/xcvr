@@ -147,7 +147,7 @@ Each phase ends with something runnable on both the Mac and the CachyOS machine.
   - **Open/Reveal:** `mappings.rs` maps the host's folders to this computer by whole folder names, longest match first, and finds unfinished `.part` files.
   - **Settings › Paths:** shows whether each local folder exists.
   - **Rename and Set Location dialogs:** from the inspector, the right-click menu, F2 and ⌘L. Files and folders inside a torrent can be renamed from the Files tab's right-click menu.
-  - **Original names:** after a rename, Transmission reports only the new name (name, files, magnet `dn`). The original survives only in its copy of the .torrent on the host (`torrent_file`). `original_name` reads that copy when a path mapping reaches it. Otherwise it uses `originals.json`, which records renames made in Transceiver on this computer, keeping the first name. Details shows "Originally …" under the name.
+  - **Original names:** after a rename, Transmission reports only the new name (name, files, magnet `dn`). The original survives only in its copy of the .torrent on the host (`torrent_file`). `original_name` reads that copy when a path mapping reaches it. Otherwise it uses `originals.json`, which records renames made in Transceiver on this computer, keeping the first name. Details shows "Originally …" under the name. Settings › Paths shows the host's torrents folder (from `torrent_file`) and maps it in one step (Choose Where It's Mounted…), so renames made elsewhere show their original name too. Checked on 4.1.3: after a rename, the stored copy still holds the original name.
 
 **7. Labels (tags)**
 - Sidebar label list with counts, with rename and delete across torrents.

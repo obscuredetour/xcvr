@@ -151,6 +151,7 @@ fn main() {
             inspect::set_location,
             inspect::path_mappings,
             inspect::set_path_mappings,
+            inspect::torrents_folder,
             inspect::open_torrent,
             labels::edit_labels,
             labels::rename_label,
