@@ -17,6 +17,17 @@ cd "$(dirname "$0")/.."
 "$DOCKER" rm -f "$NAME" >/dev/null 2>&1 || true
 trap '"$DOCKER" rm -f "$NAME" >/dev/null 2>&1 || true' EXIT INT TERM
 
+# The image first, a few tries: registries turn shared CI runners away now and
+# then ("toomanyrequests"), for a moment.
+if ! "$DOCKER" image inspect "$IMAGE" >/dev/null 2>&1; then
+  for try in 1 2 3 4 5; do
+    "$DOCKER" pull --quiet "$IMAGE" >/dev/null && break
+    [ "$try" = 5 ] && { echo "Couldn't pull $IMAGE"; exit 1; }
+    echo "Pulling $IMAGE failed; trying again in $((try * 10))s"
+    sleep $((try * 10))
+  done
+fi
+
 # USER/PASS turn on RPC authentication; WHITELIST lets the host's requests in
 # (they arrive from the container network's gateway, not 127.0.0.1).
 "$DOCKER" run -d --name "$NAME" \
