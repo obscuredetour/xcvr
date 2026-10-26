@@ -7,6 +7,7 @@ import FolderSync from 'lucide-solid/icons/folder-sync';
 import Keyboard from 'lucide-solid/icons/keyboard';
 import Palette from 'lucide-solid/icons/palette';
 import Server from 'lucide-solid/icons/server';
+import Settings2 from 'lucide-solid/icons/settings-2';
 import SlidersHorizontal from 'lucide-solid/icons/sliders-horizontal';
 import X from 'lucide-solid/icons/x';
 
@@ -15,18 +16,21 @@ import { Icon } from '../Icon';
 import { About } from './About';
 import { Appearance } from './Appearance';
 import { ConnectionSettings } from './Connection';
+import { GeneralSettings } from './General';
 import { PathSettings } from './Paths';
 import { ShortcutSettings } from './Shortcuts';
 import { ThemeSettings } from './Themes';
 import { TransmissionSettings } from './Transmission';
 
-export type SettingsSection = 'appearance' | 'themes' | 'connection' | 'transmission' | 'paths' | 'shortcuts' | 'about';
+export type SettingsSection =
+  'general' | 'appearance' | 'themes' | 'connection' | 'transmission' | 'paths' | 'shortcuts' | 'about';
 
 type Entry = { id: SettingsSection; label: string; icon: Component<LucideProps> };
 
-/** The sections, in groups: how the app looks, what it talks to, the rest. */
+/** The sections, in groups: the app itself and how it looks, what it talks to, the rest. */
 const SECTIONS: Entry[][] = [
   [
+    { id: 'general', label: 'General', icon: Settings2 },
     { id: 'appearance', label: 'Appearance', icon: AppWindow },
     { id: 'themes', label: 'Themes', icon: Palette },
   ],
@@ -48,7 +52,7 @@ const SECTIONS: Entry[][] = [
 export function SettingsDialog(props: { onClose(): void; section?: SettingsSection }) {
   let dialog!: HTMLDialogElement;
   let page!: HTMLDivElement;
-  const [section, setSection] = createSignal<SettingsSection>(props.section ?? 'appearance');
+  const [section, setSection] = createSignal<SettingsSection>(props.section ?? 'general');
 
   onMount(() => dialog.showModal());
 
@@ -110,6 +114,9 @@ export function SettingsDialog(props: { onClose(): void; section?: SettingsSecti
             <Icon of={X} class="text-muted" />
           </button>
           <Switch>
+            <Match when={section() === 'general'}>
+              <GeneralSettings />
+            </Match>
             <Match when={section() === 'appearance'}>
               <Appearance />
             </Match>

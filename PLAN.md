@@ -177,6 +177,14 @@ Each phase ends with something runnable on both the Mac and the CachyOS machine.
 - single-instance (with `deep-link` feature), `magnet:` deep link, `.torrent` association (`RunEvent::Opened` on macOS, argv on Linux), autostart.
 - Show-window shortcut: global-shortcut on macOS. On Wayland it doesn't work, so add an `xcvr --show` argument (forwarded by single-instance) and bind it in KDE System Settings → Shortcuts.
 - Handlers only work in built apps: install a local `.app` and a local PKGBUILD build to test.
+- Done:
+  - **Tray (`tray.rs`):** the menu shows speeds and counts, then Resume All, Pause All, Slower Speeds (a check that follows the host), Add Magnet from Clipboard, Show Transceiver and Quit. The poller keeps it current. On macOS a template icon tints for light and dark menu bars, and short speeds sit beside it while something's moving. On Linux it uses the app icon, with speeds in the menu and tooltip. Tray errors appear as a toast in the window (`notice` event).
+  - **Closing:** with "Keep running in the menu bar / tray" on (the default), closing hides the window. The Dock icon, the tray, the shortcut and a second launch bring it back. The window starts hidden and is shown in setup, unless the app was started with `--hidden` (launch at login).
+  - **Inbox (`inbox.rs`):** magnet links and .torrent files arrive as arguments (a second launch forwarded by single-instance; Linux opens files and links this way) or as URLs (macOS through deep-link, `file://` included, at launch and while running). They wait in the backend, deduplicated, until the UI is connected. The UI then takes them and opens the add dialog, or adds them to it if it's already open. When not connected, a toast says it'll wait.
+  - **Notifications:** "Download finished" (or "N downloads finished") from the poller's completion diff, if turned on.
+  - **Settings › General (`settings.rs`, `general.rs`, `app.json`):** launch at login (autostart: a LaunchAgent on macOS, an XDG autostart entry on Linux, both with `--hidden`), keep running, notify on finish, and the show-window shortcut ⌥⌘X / Ctrl+Alt+X. On Wayland the page explains binding `xcvr --show` in System Settings instead.
+  - **Bundle:** `magnet` deep-link scheme and a `.torrent` file association (rank Alternate, so it doesn't claim to be the default) in `tauri.conf.json`.
+  - **Key labels:** modifiers now follow platform order (⌥⌘X, ⇧⌘T; Ctrl+Alt+X elsewhere).
 
 **10. Clean up view**
 - A dialog or saved view that lists candidates: seeding longer than N days, ratio above X, no upload activity in N days, or finished (hit its seed limit).

@@ -4,8 +4,9 @@
 // when it's already open, so the options are always seen before anything goes.
 
 import { open as openFilePicker } from '@tauri-apps/plugin-dialog';
-import { createSignal, Show } from 'solid-js';
+import { createEffect, createSignal, on, Show } from 'solid-js';
 
+import { api, errorMessage, onInbox } from './api';
 import { AddDialog } from './components/AddDialog';
 import { isConnected } from './connection';
 import { toast } from './toast';
@@ -74,6 +75,39 @@ export function watchPaste(): () => void {
   };
   document.addEventListener('paste', onPaste);
   return () => document.removeEventListener('paste', onPaste);
+}
+
+/**
+ * Magnet links and .torrent files opened from outside (a link clicked in the
+ * browser, a file opened in Finder or the file manager, the tray's Add from
+ * Clipboard). They wait in the backend until connected, then open the dialog.
+ * Returns the cleanup.
+ */
+export function watchInbox(): () => void {
+  let warned = false;
+  const take = async () => {
+    if (!isConnected()) {
+      if (!warned) toast('Connect to Transmission to add this torrent. It’ll be waiting.', { error: true });
+      warned = true;
+      return;
+    }
+    try {
+      const { links, files } = await api.takeInbox();
+      if (links.length || files.length) openAdd({ links, files });
+    } catch (err) {
+      toast(errorMessage(err), { error: true });
+    }
+  };
+  createEffect(
+    on(isConnected, (connected) => {
+      if (connected) {
+        warned = false;
+        void take();
+      }
+    }),
+  );
+  const unlisten = onInbox(() => void take());
+  return () => void unlisten.then((off) => off());
 }
 
 /** Mounted once in App. */

@@ -17,6 +17,7 @@
         "height": 760,
         "minWidth": 640,
         "minHeight": 440,
+        "visible": false,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
         "trafficLightPosition": { "x": 16, "y": 24 }
@@ -26,9 +27,24 @@
       "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
     }
   },
+  "plugins": {
+    "deep-link": {
+      "desktop": { "schemes": ["magnet"] }
+    }
+  },
   "bundle": {
     "active": true,
     "category": "Utility",
+    "fileAssociations": [
+      {
+        "ext": ["torrent"],
+        "name": "BitTorrent Document",
+        "description": "BitTorrent Document",
+        "mimeType": "application/x-bittorrent",
+        "role": "Viewer",
+        "rank": "Alternate"
+      }
+    ],
     "linux": {
       "deb": { "desktopTemplate": "linux/xcvr.desktop" },
       "rpm": { "desktopTemplate": "linux/xcvr.desktop" }

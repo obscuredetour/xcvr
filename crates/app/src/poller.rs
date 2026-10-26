@@ -295,6 +295,17 @@ impl<R: Runtime> Task<R> {
         if !diff.is_empty() {
             let _ = self.app.emit(TORRENTS_EVENT, &diff);
         }
+        if !diff.completed.is_empty() {
+            let names: Vec<String> = {
+                let snapshot = lock(&self.shared.snapshot);
+                let all = snapshot.torrents();
+                diff.completed
+                    .iter()
+                    .filter_map(|h| all.iter().find(|t| t.hash_string.as_ref() == Some(h))?.name.clone())
+                    .collect()
+            };
+            notify_finished(&self.app, &names);
+        }
         let changed = lock(&self.shared.stats).as_ref() != Some(&stats);
         if changed {
             let _ = self.app.emit(STATS_EVENT, &stats);
@@ -305,6 +316,7 @@ impl<R: Runtime> Task<R> {
             let _ = self.app.emit(SESSION_EVENT, &session);
             *lock(&self.shared.session) = Some(session);
         }
+        crate::tray::update(&self.app, lock(&self.shared.stats).as_ref(), lock(&self.shared.session).as_ref());
 
         // The inspector's torrent, in full. A failure here isn't a lost connection
         // (the list just came back), so it's skipped until the next poll.
@@ -359,10 +371,29 @@ impl<R: Runtime> Task<R> {
     fn set_state(&self, state: ConnectionState) {
         let mut current = lock(&self.shared.state);
         if current.as_ref() != Some(&state) {
+            // Anything but connected: the tray says so.
+            if !matches!(state, ConnectionState::Connected { .. }) {
+                crate::tray::update(&self.app, None, None);
+            }
             let _ = self.app.emit(CONNECTION_EVENT, &state);
             *current = Some(state);
         }
     }
+}
+
+/// A notification for torrents that finished downloading, unless they're turned
+/// off (Settings › General) or the notification plugin isn't there (tests).
+fn notify_finished<R: Runtime>(app: &AppHandle<R>, names: &[String]) {
+    use tauri_plugin_notification::NotificationExt;
+    let wanted = app.try_state::<crate::settings::Settings>().is_some_and(|s| s.get().notify_finished);
+    if names.is_empty() || !wanted || app.try_state::<tauri_plugin_notification::Notification<R>>().is_none() {
+        return;
+    }
+    let (title, body) = match names {
+        [one] => ("Download finished".to_owned(), one.clone()),
+        many => (format!("{} downloads finished", many.len()), many.join(", ")),
+    };
+    let _ = app.notification().builder().title(title).body(body).show();
 }
 
 /// An error as a message, and a hint at the likely fix when there is one.

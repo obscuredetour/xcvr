@@ -19,8 +19,12 @@ const BOTH: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', Arro
 
 /** "mod+E" → "⌘E" on macOS, "Ctrl+E" elsewhere. Parts are joined with "+"; "mod++" is ⌘+ / Ctrl++. */
 export function keys(combo: string): string {
-  const parts = combo.endsWith('++') ? [...combo.slice(0, -2).split('+'), '+'] : combo.split('+');
-  const names = parts.map((p) => (isMac ? MAC : OTHER)[p] ?? BOTH[p] ?? p);
+  const split = combo.endsWith('++') ? [...combo.slice(0, -2).split('+'), '+'] : combo.split('+');
+  // Modifiers in the platform's order: ⌃⌥⇧⌘ on macOS, Ctrl+Alt+Shift elsewhere.
+  const order = isMac ? ['ctrl', 'alt', 'shift', 'mod'] : ['mod', 'ctrl', 'alt', 'shift'];
+  const rank = (p: string) => (order.includes(p) ? order.indexOf(p) : order.length);
+  const parts = split.map((p, i) => [p, i] as const).sort(([a, i], [b, j]) => rank(a) - rank(b) || i - j);
+  const names = parts.map(([p]) => (isMac ? MAC : OTHER)[p] ?? BOTH[p] ?? p);
   // "⌘-click", as macOS writes it ("Ctrl+click" elsewhere).
   if (isMac && names.at(-1) === 'click') return `${names.slice(0, -1).join('')}-click`;
   return isMac ? names.join('') : names.join('+');
@@ -37,6 +41,7 @@ export const SHORTCUTS: { group: string; items: Shortcut[] }[] = [
     group: 'General',
     items: [
       { keys: ['mod+,'], action: 'Settings' },
+      { keys: ['mod+alt+X'], action: 'Show Transceiver (from any app)' },
       { keys: ['mod+F', '/'], action: 'Search' },
       { keys: ['mod++', 'mod+-'], action: 'Larger / smaller interface' },
       { keys: ['mod+0'], action: 'Actual size' },

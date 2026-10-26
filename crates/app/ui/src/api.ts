@@ -11,7 +11,10 @@ import type { AddOptions } from './bindings/AddOptions';
 import type { AddResult } from './bindings/AddResult';
 import type { AddSource } from './bindings/AddSource';
 import type { ConnectionSettings } from './bindings/ConnectionSettings';
+import type { AppSettings } from './bindings/AppSettings';
 import type { FreeSpace } from './bindings/FreeSpace';
+import type { GeneralSettings } from './bindings/GeneralSettings';
+import type { Incoming } from './bindings/Incoming';
 import type { MappingView } from './bindings/MappingView';
 import type { Metainfo } from './bindings/Metainfo';
 import type { PathMapping } from './bindings/PathMapping';
@@ -34,10 +37,13 @@ export type {
   AddOptions,
   AddResult,
   AddSource,
+  AppSettings,
   ConnectionSettings,
   ConnectionState,
   Diff,
   FreeSpace,
+  GeneralSettings,
+  Incoming,
   MappingView,
   Metainfo,
   PathMapping,
@@ -127,7 +133,24 @@ export const api = {
   /** Open a torrent (or its file at index `file`) here, or reveal it, through the path mappings. */
   openTorrent: (hash: string, file: number | null, reveal: boolean) =>
     invoke<void>('open_torrent', { hash, file, reveal }),
+
+  /** Magnet links and .torrent files opened from outside (then emptied). */
+  takeInbox: () => invoke<Incoming>('take_inbox'),
+  /** Settings › General: this app's own settings, launch at login and the shortcut. */
+  generalSettings: () => invoke<GeneralSettings>('general_settings'),
+  setGeneralSettings: (next: AppSettings) => invoke<GeneralSettings>('set_general_settings', { next }),
+  setLaunchAtLogin: (on: boolean) => invoke<GeneralSettings>('set_launch_at_login', { on }),
 };
+
+/** Something arrived from outside (a magnet clicked, a .torrent opened): `takeInbox` has it. */
+export function onInbox(handler: () => void): Promise<UnlistenFn> {
+  return listen('inbox', handler);
+}
+
+/** A short message from the menu bar / tray, which has no UI of its own. */
+export function onNotice(handler: (message: string) => void): Promise<UnlistenFn> {
+  return listen<string>('notice', (e) => handler(e.payload));
+}
 
 export function onSession(handler: (s: Session) => void): Promise<UnlistenFn> {
   return listen<Session>('session', (e) => handler(e.payload));

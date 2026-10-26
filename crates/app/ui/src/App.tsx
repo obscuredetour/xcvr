@@ -3,8 +3,8 @@ import { createEffect, createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { chosen, openHere, openTorrentMenu, remove, renameTorrent, setLocation, toggleRunning } from './actions';
 import { TorrentDialogsHost } from './components/TorrentDialogs';
 import { watchInspector } from './inspector';
-import { AddDialogHost, chooseTorrentFiles, openAdd, watchPaste } from './adder';
-import { onOpenSettings, onZoomMenu } from './api';
+import { AddDialogHost, chooseTorrentFiles, openAdd, watchInbox, watchPaste } from './adder';
+import { onNotice, onOpenSettings, onZoomMenu } from './api';
 import { navOrder } from './browse';
 import { ConfirmHost } from './confirm';
 import { isConnected, session, setTurtle, watchConnection } from './connection';
@@ -18,7 +18,7 @@ import { TopBar } from './components/TopBar';
 import { tableView, TorrentArea } from './components/TorrentArea';
 import { QuestionHost } from './question';
 import { pruneSelection, select, selectAll, selectedHash, selectedHashes, selectRange } from './selection';
-import { Toast } from './toast';
+import { Toast, toast } from './toast';
 import { torrent, watchTorrents } from './torrents';
 import { inspectorOpen, setInspectorOpen, setSidebarOpen, sidebarOpen } from './view';
 import { resetZoom, stepZoom } from './zoom';
@@ -169,6 +169,11 @@ export function App() {
     });
     // ⌘V with a magnet link (outside a text field) opens the add dialog with it.
     onCleanup(watchPaste());
+    // Links and files opened from outside the window.
+    onCleanup(watchInbox());
+    // Messages from the menu bar / tray.
+    const unlistenNotice = onNotice((message) => toast(message, { error: true }));
+    onCleanup(() => void unlistenNotice.then((off) => off()));
     // The inspector's torrent, in full, while it shows one.
     watchInspector();
   });
