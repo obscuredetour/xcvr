@@ -44,18 +44,19 @@ export function GeneralTab(props: { t: Torrent }) {
   return (
     <>
       <Section>
-        <div class="h-2 overflow-hidden rounded-full bg-element">
-          <div
-            class={`h-full rounded-full ${TONE_BG[statusTone(t())]}`}
-            style={{ width: `${progressOf(t()) * 100}%` }}
-          />
-        </div>
-        <div class="mt-1.5 flex justify-between text-xs text-muted tabular-nums">
+        {/* What's done, then the bar: read like a caption, not a footnote. */}
+        <div class="mb-1.5 flex justify-between text-xs text-muted tabular-nums">
           <span>
             {formatSize(Math.max(0, (t().size_when_done ?? 0) - (t().left_until_done ?? 0)))} of{' '}
             {formatSize(t().size_when_done ?? 0)} ({formatPercent(t().percent_done ?? 0)})
           </span>
           <Show when={formatEta(t())}>{(eta) => <span>{eta()} left</span>}</Show>
+        </div>
+        <div class="h-2 overflow-hidden rounded-full bg-element">
+          <div
+            class={`h-full rounded-full ${TONE_BG[statusTone(t())]}`}
+            style={{ width: `${progressOf(t()) * 100}%` }}
+          />
         </div>
       </Section>
 
