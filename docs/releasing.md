@@ -7,9 +7,11 @@ and test it day to day.
    `crates/app/ui/package.json`, and push that to `main`.
 2. Tag it with that version: `git tag v<version> && git push origin v<version>`.
    `.github/workflows/release.yml` builds macOS (Apple silicon and Intel `.dmg`s) and Linux
-   (`.AppImage`, `.deb`, `.rpm`) into a draft release.
+   (`.AppImage`, `.deb`, `.rpm`) into a draft release, with what `install.sh` needs beside them:
+   `install.sh` itself, `transceiver.png` (the menu entry's icon) and `SHA256SUMS`.
 3. Look the draft over and publish it. The in-app updater reads the latest release's `latest.json`,
-   so publishing is what offers it to everyone.
+   and the installer `releases/latest/download/install.sh`, so publishing is what offers it to
+   everyone.
 4. Update the Arch package: `scripts/aur-update.sh <version>`, and commit it
    ([packaging/aur/README.md](../packaging/aur/README.md)).
 
@@ -21,7 +23,7 @@ and the release notes say so.
 
 Transceiver updates itself (Settings › About, and a toast when the daily check finds a version)
 from the latest release's `latest.json`, which `tauri-action` writes from the builds' updater
-signatures. The macOS app, the AppImage, and the `.deb` and `.rpm` (while dpkg or rpm owns the
+signatures. The macOS app, the AppImage (`install.sh`'s too), and the `.deb` and `.rpm` (while dpkg or rpm owns the
 program) update this way; the Arch package and source builds are left to their package manager
 (`crates/app/src/updates.rs`).
 

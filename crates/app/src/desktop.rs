@@ -9,7 +9,8 @@
 //!   app's data folder (the image's own files are only mounted while it runs).
 //!
 //! Anything else removes it, so it never hides an installed package's entry,
-//! and an entry someone else wrote is left alone.
+//! and an entry someone else wrote (install.sh's, which isn't hidden) is left
+//! alone.
 
 use std::path::{Path, PathBuf};
 
@@ -62,6 +63,8 @@ fn sync(data_dir: &Path, app_dir: &Path, build: &Build) -> std::io::Result<()> {
             }
             return Ok(());
         }
+        // Someone's own entry (install.sh's, say): leave it alone.
+        _ if existing.is_some() && !ours => return Ok(()),
         Build::Dev(exe) => (DEV_NAME, exe.clone(), Path::new(env!("CARGO_MANIFEST_DIR")).join("icons/128x128@2x.png")),
         Build::AppImage(appimage) => {
             let icon = app_dir.join("Transceiver.png");
@@ -72,10 +75,6 @@ fn sync(data_dir: &Path, app_dir: &Path, build: &Build) -> std::io::Result<()> {
             (APPIMAGE_NAME, appimage.clone(), icon)
         }
     };
-    // Someone's own entry: leave it alone.
-    if existing.is_some() && !ours {
-        return Ok(());
-    }
     let entry = format!(
         "[Desktop Entry]\nType=Application\n{name}\nExec=\"{}\" %U\nIcon={}\n\
          StartupWMClass=Transceiver\nNoDisplay=true\nTerminal=false\n",
