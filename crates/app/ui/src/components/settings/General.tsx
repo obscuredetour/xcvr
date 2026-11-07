@@ -132,7 +132,7 @@ function TmdbKey() {
   return (
     <Group
       title="TV episode names"
-      description="Renaming a torrent for a TV library names each episode with its title. With a TMDB key, titles come from TMDB (themoviedb.org); without one, from the file names."
+      description="Smart Rename names each episode with its title: from TMDB (themoviedb.org) with a key; without one, from TVmaze (tvmaze.com, shows only, no key needed) once you find the show there, or else from the file names. With a key, movies can be looked up too."
     >
       <Row
         label="TMDB key"
@@ -140,7 +140,8 @@ function TmdbKey() {
           <>
             An API key or API read access token, free with a TMDB account (Settings › API on themoviedb.org). Kept in{' '}
             {status()?.keyStorage ?? 'the system keychain'}. Only the show you look up, and its seasons, are sent to
-            TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.
+            TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB. Show data without a key comes
+            from TVmaze, under CC BY-SA.
           </>
         }
       >

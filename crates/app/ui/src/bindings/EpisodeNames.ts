@@ -9,6 +9,11 @@ export type EpisodeNames = {
  */
 show: string, 
 /**
- * The show on TMDB, for the episodes' titles; None takes them from the file names.
+ * The show on TMDB, for the episodes' titles.
  */
-tmdb: number | null, };
+tmdb: number | null, 
+/**
+ * The show on TVmaze, for the episodes' titles without a TMDB key. With
+ * neither, they come from the file names.
+ */
+tvmaze: number | null, };

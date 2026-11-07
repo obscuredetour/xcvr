@@ -4,7 +4,8 @@
 //! - A show: episodes named `Show (Year) - s01e01 - Title.mkv`, its folder (and
 //!   season folders inside it) `Season 01`. The season and episode come from each
 //!   file's name (`S01E01`, `1x01`, or an episode number inside a `Season 1`
-//!   folder); the title from TMDB when the show's chosen there (tmdb.rs), else
+//!   folder); the title from TMDB or TVmaze when the show's chosen there
+//!   (tmdb.rs, tvmaze.rs), else
 //!   from what follows the episode number in the file's name, up to the release
 //!   tags (`1080p`, `WEB-DL`, …).
 //! - A movie: its folder `Title (Year)`, the film (its largest video, or its
@@ -51,8 +52,11 @@ pub struct NameOptions {
 pub struct EpisodeNames {
     /// As it starts each name, e.g. "The Beverly Hillbillies (1962)".
     pub show: String,
-    /// The show on TMDB, for the episodes' titles; None takes them from the file names.
+    /// The show on TMDB, for the episodes' titles.
     pub tmdb: Option<u64>,
+    /// The show on TVmaze, for the episodes' titles without a TMDB key. With
+    /// neither, they come from the file names.
+    pub tvmaze: Option<u64>,
 }
 
 /// A movie's names: the folder `{title}`, the film `{title}.mkv`.
@@ -375,6 +379,17 @@ pub fn guess_show(name: &str) -> Option<String> {
         Some(c) if !c[1].is_empty() => format!("{} ({})", &c[1], &c[2]),
         _ => show,
     })
+}
+
+/// A placeholder title ("Episode 1", "TBA"), which a file's own title beats.
+pub fn is_placeholder_title(title: &str) -> bool {
+    let t = title.trim().to_ascii_lowercase();
+    t.is_empty()
+        || matches!(t.as_str(), "tba" | "tbd" | "untitled")
+        || t.strip_prefix("episode").is_some_and(|n| {
+            let n = n.trim_start_matches([' ', '#']);
+            !n.is_empty() && n.chars().all(|c| c.is_ascii_digit())
+        })
 }
 
 /// A name that's safe as a file's on any host: no path separators, and none of the
@@ -725,6 +740,15 @@ mod tests {
     }
 
     #[test]
+    fn placeholder_titles() {
+        assert!(is_placeholder_title("Episode 1"));
+        assert!(is_placeholder_title("Episode #12"));
+        assert!(is_placeholder_title("TBA"));
+        assert!(!is_placeholder_title("Episode One"));
+        assert!(!is_placeholder_title("The Clampetts Strike Oil"));
+    }
+
+    #[test]
     fn safe_names() {
         assert_eq!(safe_name("Star Trek: The Next Generation"), "Star Trek - The Next Generation");
         assert_eq!(safe_name("AC/DC?  Live."), "AC-DC Live");
@@ -737,7 +761,7 @@ mod tests {
     fn episodes_as(show: &str) -> NameOptions {
         NameOptions {
             top: some("Season 01"),
-            episodes: Some(EpisodeNames { show: show.to_owned(), tmdb: None }),
+            episodes: Some(EpisodeNames { show: show.to_owned(), ..EpisodeNames::default() }),
             ..NameOptions::default()
         }
     }

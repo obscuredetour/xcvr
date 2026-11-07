@@ -20,16 +20,28 @@ const API: &str = "https://api.themoviedb.org/3";
 /// The keychain account the key is kept under.
 pub const KEY_ACCOUNT: &str = "tmdb-api-key";
 
-/// A show or movie found on TMDB.
+/// Where a show or movie was found.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub enum TitleSource {
+    Tmdb,
+    /// TVmaze (tvmaze.rs): shows, without a key.
+    Tvmaze,
+}
+
+/// A show or movie found on TMDB or TVmaze.
 #[derive(Debug, Clone, PartialEq, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
-pub struct TmdbTitle {
+pub struct FoundTitle {
+    /// Its id there.
     pub id: u64,
     pub name: String,
     /// The year it first aired, or came out.
     pub year: Option<u32>,
     pub overview: String,
+    pub source: TitleSource,
 }
 
 /// Whether there's a key, and where it's kept.
@@ -81,7 +93,7 @@ impl Tmdb {
         }
     }
 
-    pub async fn search(&self, key: &str, query: &str, kind: MediaKind) -> Result<Vec<TmdbTitle>, String> {
+    pub async fn search(&self, key: &str, query: &str, kind: MediaKind) -> Result<Vec<FoundTitle>, String> {
         #[derive(Deserialize)]
         struct Page {
             results: Vec<Found>,
@@ -110,11 +122,12 @@ impl Tmdb {
         Ok(page
             .results
             .into_iter()
-            .map(|f| TmdbTitle {
+            .map(|f| FoundTitle {
                 id: f.id,
                 name: f.name,
                 year: f.first_air_date.as_deref().and_then(|d| d.get(..4)).and_then(|y| y.parse().ok()),
                 overview: f.overview.unwrap_or_default(),
+                source: TitleSource::Tmdb,
             })
             .collect())
     }
@@ -137,7 +150,7 @@ impl Tmdb {
         let titles: HashMap<u32, String> = found
             .episodes
             .into_iter()
-            .filter(|e| !e.name.trim().is_empty())
+            .filter(|e| !crate::naming::is_placeholder_title(&e.name))
             .map(|e| (e.episode_number, e.name.trim().to_owned()))
             .collect();
         self.seasons.lock().unwrap_or_else(|e| e.into_inner()).insert((show, season), titles.clone());
@@ -162,7 +175,7 @@ impl Tmdb {
 }
 
 /// "The Beverly Hillbillies (1962)" → the title and the year, to search by both.
-fn split_year(query: &str) -> (String, Option<u32>) {
+pub(crate) fn split_year(query: &str) -> (String, Option<u32>) {
     let q = query.trim();
     if let Some(open) = q.rfind('(')
         && q.ends_with(')')
@@ -211,7 +224,7 @@ pub async fn tmdb_search(
     kind: MediaKind,
     secrets: State<'_, Arc<Secrets>>,
     tmdb: State<'_, Tmdb>,
-) -> Result<Vec<TmdbTitle>, Problem> {
+) -> Result<Vec<FoundTitle>, Problem> {
     let Some(key) = key(&secrets).await? else {
         return Err(Problem::from("Add a TMDB key in Settings › General to look things up.".to_owned()));
     };

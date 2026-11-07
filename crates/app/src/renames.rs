@@ -20,6 +20,7 @@ use crate::originals::Originals;
 use crate::poller::Poller;
 use crate::secrets::Secrets;
 use crate::tmdb::{self, Tmdb};
+use crate::tvmaze::Tvmaze;
 
 /// Whose names to plan: a .torrent file here (before it's added), or a torrent in Transmission.
 #[derive(Debug, Clone, Deserialize, TS)]
@@ -68,18 +69,26 @@ async fn torrent_names(poller: &Poller, hash: &str) -> Result<(String, Vec<Torre
     Ok((t.name.unwrap_or_default(), files, t.download_dir.unwrap_or_default()))
 }
 
-/// The plan, with TMDB's titles when a show's chosen there. TMDB failing isn't fatal:
-/// the titles in the file names stand in, and the plan says why.
+/// The plan, with TMDB's or TVmaze's titles when a show's chosen there. Their failing
+/// isn't fatal: the titles in the file names stand in, and the plan says why.
 async fn make_plan(
     name: &str,
     files: &[TorrentFile],
     options: &NameOptions,
     secrets: &Arc<Secrets>,
     tmdb: &Tmdb,
+    tvmaze: &Tvmaze,
 ) -> Result<NamePlan, Problem> {
     let mut titles = Default::default();
     let mut problem = None;
-    if let Some(show) = options.episodes.as_ref().and_then(|e| e.tmdb) {
+    let episodes = options.episodes.as_ref();
+    if let Some(show) = episodes.and_then(|e| e.tvmaze).filter(|_| episodes.is_some_and(|e| e.tmdb.is_none())) {
+        match tvmaze.titles(show).await {
+            Ok(found) => titles = found,
+            Err(why) => problem = Some(format!("{why} Titles come from the file names.")),
+        }
+    }
+    if let Some(show) = episodes.and_then(|e| e.tmdb) {
         let seasons: BTreeSet<u32> = naming::episodes(files).into_iter().flatten().map(|e| e.season).collect();
         match tmdb::key(secrets).await? {
             None => problem = Some("No TMDB key (Settings › General), so titles come from the file names.".to_owned()),
@@ -102,6 +111,7 @@ pub async fn name_plan(
     poller: State<'_, Poller>,
     secrets: State<'_, Arc<Secrets>>,
     tmdb: State<'_, Tmdb>,
+    tvmaze: State<'_, Tvmaze>,
 ) -> Result<NamePlan, Problem> {
     let (name, files) = match source {
         PlanSource::File { path } => {
@@ -115,7 +125,7 @@ pub async fn name_plan(
             (name, files)
         }
     };
-    make_plan(&name, &files, &options, &secrets, &tmdb).await
+    make_plan(&name, &files, &options, &secrets, &tmdb, &tvmaze).await
 }
 
 /// Rename a torrent's files, then its folders, then the torrent itself, as planned;
@@ -127,10 +137,11 @@ pub async fn apply_names(
     poller: State<'_, Poller>,
     secrets: State<'_, Arc<Secrets>>,
     tmdb: State<'_, Tmdb>,
+    tvmaze: State<'_, Tvmaze>,
     originals: State<'_, Originals>,
 ) -> Result<NamesApplied, Problem> {
     let (name, files, download_dir) = torrent_names(&poller, &hash).await?;
-    let plan = make_plan(&name, &files, &options, &secrets, &tmdb).await?;
+    let plan = make_plan(&name, &files, &options, &secrets, &tmdb, &tvmaze).await?;
     let client = client(&poller)?;
     let ids = Ids::hashes([hash.as_str()]);
     let mut applied = NamesApplied::default();

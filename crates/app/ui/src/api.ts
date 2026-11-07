@@ -21,7 +21,7 @@ import type { NameOptions } from './bindings/NameOptions';
 import type { NamePlan } from './bindings/NamePlan';
 import type { NamesApplied } from './bindings/NamesApplied';
 import type { PlanSource } from './bindings/PlanSource';
-import type { TmdbTitle } from './bindings/TmdbTitle';
+import type { FoundTitle } from './bindings/FoundTitle';
 import type { MediaKind } from './bindings/MediaKind';
 import type { TmdbStatus } from './bindings/TmdbStatus';
 import type { PathMapping } from './bindings/PathMapping';
@@ -52,6 +52,7 @@ export type {
   ConnectionSettings,
   ConnectionState,
   Diff,
+  FoundTitle,
   FreeSpace,
   GeneralSettings,
   Incoming,
@@ -70,7 +71,6 @@ export type {
   SessionSet,
   SessionStats,
   TestResult,
-  TmdbTitle,
   TmdbStatus,
   Torrent,
   TorrentAction,
@@ -139,7 +139,9 @@ export const api = {
   /** Save a TMDB key (checked with TMDB first), or forget it with null. */
   setTmdbKey: (key: string | null) => invoke<TmdbStatus>('set_tmdb_key', { key }),
   /** Shows or movies on TMDB; "Name (1962)" searches by year too. */
-  tmdbSearch: (query: string, kind: MediaKind) => invoke<TmdbTitle[]>('tmdb_search', { query, kind }),
+  tmdbSearch: (query: string, kind: MediaKind) => invoke<FoundTitle[]>('tmdb_search', { query, kind }),
+  /** Shows on TVmaze, which needs no key; "Name (1962)" keeps that year's. */
+  tvmazeSearch: (query: string) => invoke<FoundTitle[]>('tvmaze_search', { query }),
   /** Every Transmission setting. */
   sessionSettings: () => invoke<Session>('session_settings'),
   /** Change settings; resolves to all of them as they are now. */

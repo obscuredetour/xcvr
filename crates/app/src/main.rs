@@ -21,6 +21,7 @@ mod secrets;
 mod settings;
 mod tmdb;
 mod tray;
+mod tvmaze;
 mod updates;
 
 use std::path::Path;
@@ -79,6 +80,7 @@ fn main() {
             app.manage(originals::Originals::load(dir.join("originals.json")));
             app.manage(inspect::CopyNames::default());
             app.manage(tmdb::Tmdb::default());
+            app.manage(tvmaze::Tvmaze::default());
             app.manage(Poller::start(app.handle().clone()));
             tray::build(app.handle())?;
             general::apply_shortcut(app.handle(), shortcut_enabled);
@@ -167,6 +169,7 @@ fn main() {
             tmdb::tmdb_status,
             tmdb::set_tmdb_key,
             tmdb::tmdb_search,
+            tvmaze::tvmaze_search,
             labels::edit_labels,
             labels::rename_label,
             labels::delete_label,

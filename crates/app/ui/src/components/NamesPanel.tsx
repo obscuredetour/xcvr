@@ -1,8 +1,8 @@
 // Renaming a torrent's folder and files for a media library: keep the names,
 // or rename it as
 // - a show: episodes `Show (Year) - s01e01 - Title`, its folder `Season 01`
-//   (or the show's name, for several seasons), with titles from TMDB when the
-//   show's chosen there;
+//   (or the show's name, for several seasons), with titles from TMDB (with a
+//   key) or TVmaze (without one) when the show's chosen there;
 // - a movie: its folder and the film `Title (Year)`;
 // - just its folder (or file).
 // The backend plans the names (naming.rs); this shows the plan as it changes.
@@ -21,7 +21,7 @@ import {
   type NameOptions,
   type NamePlan,
   type PlanSource,
-  type TmdbTitle,
+  type FoundTitle,
 } from '../api';
 import { smallButton } from '../buttons';
 import { Segmented, Toggle } from './settings/parts';
@@ -34,7 +34,7 @@ const sectionLabel = 'mb-1.5 text-xs font-semibold text-muted';
 const lastPart = (path: string) => path.split('/').pop() ?? path;
 const pad = (n: number) => String(n).padStart(2, '0');
 /** "The Beverly Hillbillies (1962)". */
-export const titleLabel = (s: TmdbTitle) => (s.year ? `${s.name} (${s.year})` : s.name);
+export const titleLabel = (s: FoundTitle) => (s.year ? `${s.name} (${s.year})` : s.name);
 
 const isSeasonFolder = (p: string) => /^(season|series|s)[ ._-]?\d+$/i.test(p.trim()) || /^specials$/i.test(p.trim());
 
@@ -62,9 +62,9 @@ export function createNames(props: { source: () => PlanSource | null; defaultSho
   const [modeChoice, setMode] = createSignal<Mode | null>(null);
   const [topText, setTopText] = createSignal<string | null>(null);
   const [showText, setShowText] = createSignal<string | null>(null);
-  const [tmdbShow, setTmdbShow] = createSignal<TmdbTitle | null>(null);
+  const [foundShow, setFoundShow] = createSignal<FoundTitle | null>(null);
   const [movieText, setMovieText] = createSignal<string | null>(null);
-  const [tmdbMovie, setTmdbMovie] = createSignal<TmdbTitle | null>(null);
+  const [tmdbMovie, setTmdbMovie] = createSignal<FoundTitle | null>(null);
   const [tag, setTag] = createSignal(false);
   const [ownFolder, setOwnFolder] = createSignal(true);
   const [plan, setPlan] = createSignal<NamePlan | null>(null);
@@ -94,7 +94,13 @@ export function createNames(props: { source: () => PlanSource | null; defaultSho
         return {
           ...none,
           top: top().trim() || null,
-          episodes: show().trim() ? { show: show().trim(), tmdb: tmdbShow()?.id ?? null } : null,
+          episodes: show().trim()
+            ? {
+                show: show().trim(),
+                tmdb: foundShow()?.source === 'tmdb' ? foundShow()!.id : null,
+                tvmaze: foundShow()?.source === 'tvmaze' ? foundShow()!.id : null,
+              }
+            : null,
         };
       case 'movie':
         return movie().trim()
@@ -149,8 +155,8 @@ export function createNames(props: { source: () => PlanSource | null; defaultSho
     setTopText,
     show,
     setShowText,
-    tmdbShow,
-    setTmdbShow,
+    foundShow,
+    setFoundShow,
     movie,
     setMovieText,
     tmdbMovie,
@@ -207,13 +213,13 @@ export function NamesPanel(props: { names: Names; title?: string; hideToggle?: b
               placeholder="The Beverly Hillbillies (1962)"
               value={n().show()}
               onInput={(v) => n().setShowText(v)}
-              chosen={n().tmdbShow()}
+              chosen={n().foundShow()}
               onChoose={(s) => {
-                n().setTmdbShow(s);
+                n().setFoundShow(s);
                 if (s) n().setShowText(titleLabel(s));
               }}
-              chosenText="Titles from TMDB"
-              noKeyText="Titles come from the file names. With a TMDB key (Settings › General), they can come from TMDB."
+              chosenText="Titles from"
+              noKeyText="Titles come from the file names, or from TVmaze once you find the show there."
             />
           </Show>
 
@@ -232,7 +238,7 @@ export function NamesPanel(props: { names: Names; title?: string; hideToggle?: b
                 n().setTmdbMovie(s);
                 if (s) n().setMovieText(titleLabel(s));
               }}
-              chosenText="On TMDB"
+              chosenText="On"
               noKeyText="With a TMDB key (Settings › General), you can look the movie up there."
             />
             <Show when={n().tmdbMovie()}>
@@ -295,25 +301,31 @@ function ToggleRow(props: { label: string; description: string; checked: boolean
   );
 }
 
-/** A show's or movie's name, and finding it on TMDB. */
+/**
+ * A show's or movie's name, and finding it on TMDB; without a TMDB key, a show
+ * on TVmaze (which needs none).
+ */
 function TitleField(props: {
   kind: MediaKind;
   label: string;
   placeholder: string;
   value: string;
   onInput(value: string): void;
-  chosen: TmdbTitle | null;
-  onChoose(title: TmdbTitle | null): void;
-  /** Before the chosen title: "Titles from TMDB". */
+  chosen: FoundTitle | null;
+  onChoose(title: FoundTitle | null): void;
+  /** Before where the chosen title's from: "Titles from" (TMDB). */
   chosenText: string;
   /** Said when there's no TMDB key. */
   noKeyText: string;
 }) {
   const [status] = createResource(() => api.tmdbStatus().catch(() => null));
-  const [results, setResults] = createSignal<TmdbTitle[] | null>(null);
+  const [results, setResults] = createSignal<FoundTitle[] | null>(null);
   const [searching, setSearching] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
   const id = `names-${props.kind}`;
+  /** Where to look: TMDB with a key; TVmaze for a show without one; nowhere for a movie without one. */
+  const source = () => (status()?.hasKey ? 'TMDB' : props.kind === 'show' && !status.loading ? 'TVmaze' : null);
+  const sourceName = (s: FoundTitle) => (s.source === 'tvmaze' ? 'TVmaze' : 'TMDB');
 
   const search = async () => {
     const q = props.value.trim();
@@ -321,9 +333,9 @@ function TitleField(props: {
     setSearching(true);
     setError(null);
     try {
-      const found = await api.tmdbSearch(q, props.kind);
+      const found = source() === 'TMDB' ? await api.tmdbSearch(q, props.kind) : await api.tvmazeSearch(q);
       setResults(found);
-      if (!found.length) setError(`Nothing on TMDB called “${q}”.`);
+      if (!found.length) setError(`Nothing on ${source()} called “${q}”.`);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -349,11 +361,11 @@ function TitleField(props: {
             // Enter looks it up, rather than submitting the dialog.
             if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey) {
               e.preventDefault();
-              if (status()?.hasKey) void search();
+              if (source()) void search();
             }
           }}
         />
-        <Show when={status()?.hasKey}>
+        <Show when={source()}>
           <button
             type="button"
             class={`${smallButton} h-8`}
@@ -361,7 +373,7 @@ function TitleField(props: {
             onClick={() => void search()}
           >
             <Icon of={Search} size={14} />
-            {searching() ? 'Finding…' : 'Find on TMDB'}
+            {searching() ? 'Finding…' : `Find on ${source()}`}
           </button>
         </Show>
       </div>
@@ -370,7 +382,7 @@ function TitleField(props: {
         {(s) => (
           <div class="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
             <span class="truncate">
-              {props.chosenText}: <span class="text-fg">{titleLabel(s())}</span>
+              {props.chosenText} {sourceName(s())}: <span class="text-fg">{titleLabel(s())}</span>
             </span>
             <button
               type="button"
