@@ -273,6 +273,66 @@ async fn a_torrents_whole_life() {
     assert!(c.torrent_get(&ids, &[TorrentField::Id]).await.unwrap().torrents.is_empty());
 }
 
+/// A .torrent of a folder `name` holding `files` (paths under it), each 100 bytes.
+fn folder_torrent(name: &str, files: &[&str]) -> Vec<u8> {
+    let bytes = |s: &str| format!("{}:{s}", s.len());
+    let mut content = Vec::new();
+    let mut list = String::from("l");
+    for (i, path) in files.iter().enumerate() {
+        content.extend(std::iter::repeat_n(i as u8, 100));
+        let parts: String = path.split('/').map(bytes).collect();
+        list.push_str(&format!("d6:lengthi100e4:pathl{parts}ee"));
+    }
+    list.push('e');
+    let mut info = format!("d5:files{list}4:name{}12:piece lengthi16384e6:pieces20:", bytes(name)).into_bytes();
+    info.extend_from_slice(&Sha1::digest(&content));
+    info.extend_from_slice(b"e");
+    [b"d4:info".as_slice(), &info, b"e"].concat()
+}
+
+/// What Smart Rename does (crates/app/src/renames.rs): rename files inside a torrent,
+/// then its folder, straight after adding it, before any of its data is there.
+#[tokio::test]
+#[ignore = "needs a Transmission container: scripts/test-container.sh"]
+async fn renaming_right_after_adding() {
+    let c = client();
+    let name = unique("xcvr-show.S01");
+    let add = AddTorrent::new(TorrentSource::Metainfo(folder_torrent(
+        &name,
+        &["Show.S01E01.Pilot.1080p.mkv", "Subs/Show.S01E01.Pilot.1080p.en.srt", "info.nfo"],
+    )));
+    let added = match c.torrent_add(&add).await.unwrap() {
+        AddOutcome::Added(t) => t,
+        other => panic!("{other:?}"),
+    };
+    let ids = Ids::hashes([added.hash_string.as_str()]);
+
+    // Its files are known at once, named as in the .torrent.
+    let files = |t: &transmission::Torrent| -> Vec<String> {
+        t.files.as_ref().unwrap().iter().map(|f| f.name.clone()).collect()
+    };
+    let t = &c.torrent_get(&ids, &[TorrentField::Files]).await.unwrap().torrents[0];
+    assert_eq!(files(t)[0], format!("{name}/Show.S01E01.Pilot.1080p.mkv"));
+
+    c.torrent_rename_path(&ids, &format!("{name}/Show.S01E01.Pilot.1080p.mkv"), "Show - s01e01 - Pilot.mkv")
+        .await
+        .unwrap();
+    c.torrent_rename_path(&ids, &format!("{name}/Subs/Show.S01E01.Pilot.1080p.en.srt"), "Show - s01e01 - Pilot.en.srt")
+        .await
+        .unwrap();
+    c.torrent_rename_path(&ids, &name, "Season 01").await.unwrap();
+
+    let t = &c.torrent_get(&ids, &[TorrentField::Name, TorrentField::Files]).await.unwrap().torrents[0];
+    assert_eq!(t.name.as_deref(), Some("Season 01"));
+    let mut got = files(t);
+    got.sort();
+    assert_eq!(
+        got,
+        ["Season 01/Show - s01e01 - Pilot.mkv", "Season 01/Subs/Show - s01e01 - Pilot.en.srt", "Season 01/info.nfo"]
+    );
+    c.torrent_remove(&ids, true).await.unwrap();
+}
+
 #[tokio::test]
 #[ignore = "needs a Transmission container: scripts/test-container.sh"]
 async fn magnet_without_metadata() {

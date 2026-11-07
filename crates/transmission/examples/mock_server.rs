@@ -1389,7 +1389,7 @@ impl Mock {
             let files = if count == 1 {
                 vec![(info.name.clone(), info.total_size)]
             } else {
-                (1..=count).map(|i| (format!("{}/part {i:02}", info.name), info.total_size / count)).collect()
+                info.files.iter().map(|f| (f.path.clone(), f.length)).collect()
             };
             (info.name, hash_of(&String::from_utf8_lossy(&bytes)), files, false)
         } else if let Some(link) = params.get("filename").and_then(Value::as_str) {
