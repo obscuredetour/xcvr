@@ -5,7 +5,7 @@ members = ["crates/*"]
 # One version for the app and every crate: bump it here (and in
 # crates/app/ui/package.json). tauri.conf.json takes it from here.
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 
 [profile.release]
 # Line tables, then the debug info stripped from the binary: backtraces keep
