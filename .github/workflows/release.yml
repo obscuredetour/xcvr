@@ -40,8 +40,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: macOS Apple Silicon, os: macos-14 }
-          - { name: macOS Intel, os: macos-15-intel }
+          # macOS 26 images, for their Xcode 26: macOS 26 draws an app built
+          # against an older SDK in its old style (the traffic lights out of
+          # line with the toolbar). The app still runs on macOS 13
+          # (bundle.macOS.minimumSystemVersion sets the deployment target).
+          - { name: macOS Apple Silicon, os: macos-26 }
+          - { name: macOS Intel, os: macos-26-intel }
           # The oldest supported Ubuntu, so the AppImage's glibc and WebKitGTK suit most distributions.
           - { name: Linux, os: ubuntu-22.04 }
     steps:
@@ -64,6 +68,13 @@ jobs:
       - name: Ad-hoc signing (macOS)
         if: runner.os == 'macOS'
         run: echo "APPLE_SIGNING_IDENTITY=-" >> "$GITHUB_ENV"
+      # An older SDK puts the traffic lights out of place on macOS 26 (see the matrix).
+      - name: macOS SDK is 26 or newer
+        if: runner.os == 'macOS'
+        run: |
+          sdk="$(xcrun --sdk macosx --show-sdk-version)"
+          echo "Xcode $(xcodebuild -version | head -1), macOS SDK $sdk"
+          [ "${sdk%%.*}" -ge 26 ] || { echo "The macOS SDK is $sdk; the build needs 26 or newer"; exit 1; }
       - name: Linux build dependencies
         if: runner.os == 'Linux'
         run: |
