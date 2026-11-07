@@ -6,7 +6,7 @@
 # and the checksum for a release.
 
 pkgname=transceiver-bin
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc='A desktop client for Transmission'
 arch=('x86_64')
@@ -39,7 +39,7 @@ options=('!debug')
 source=("https://github.com/obscuredetour/xcvr/releases/download/v${pkgver}/Transceiver_${pkgver}_amd64.deb"
         "LICENSE-${pkgver}::https://raw.githubusercontent.com/obscuredetour/xcvr/v${pkgver}/LICENSE")
 # Set for each release by scripts/aur-update.sh, once the release is published.
-sha256sums=('6652c964cee0e0d273d6317fcbb92830cf6da1b2d1784598653609ac0ed03b28'
+sha256sums=('a1a8d8c4fa68ab0f835f3461d6041ae2564e0cdb5eaf7a0f147ed5cc429d5c4b'
             '7339b184489ab71f06671840aff2aa2c3e2423a8ab564d06de203c8222677ed1')
 
 package() {
