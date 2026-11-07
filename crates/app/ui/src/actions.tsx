@@ -98,6 +98,14 @@ export function renameTorrent(hash: string = chosen()[0] ?? ''): void {
   if (t?.name) setRenaming({ hash, path: t.name, current: t.name });
 }
 
+/** Which torrent the Smart Rename dialog renames (its folder and episodes, for a TV library). */
+const [smartRenaming, setSmartRenaming] = createSignal<string | null>(null);
+export { smartRenaming, setSmartRenaming };
+
+export function smartRename(hash: string = chosen()[0] ?? ''): void {
+  if (torrent(hash)) setSmartRenaming(hash);
+}
+
 /** Which torrents the set-location dialog moves. */
 const [relocating, setRelocating] = createSignal<string[] | null>(null);
 export { relocating, setRelocating };

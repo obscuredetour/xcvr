@@ -36,6 +36,10 @@ tauri-plugin-updater = { version = "2", default-features = false, features = ["n
 tokio = { version = "1.54.1", features = ["macros", "sync", "time"] }
 transmission = { path = "../transmission", features = ["ts"] }
 ts-rs = { version = "12.0.1", features = ["no-serde-warnings"] }
+# Episode numbers and release tags in file names (naming.rs).
+regex = "1.13.1"
+# TMDB (tmdb.rs), over the system's TLS, as the updater has it (above).
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "native-tls", "query"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # Already in the tree through gtk; for set_prgname, which names the window for the desktop (main).

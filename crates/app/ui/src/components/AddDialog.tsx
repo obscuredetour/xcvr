@@ -24,6 +24,7 @@ import { torrents } from '../torrents';
 import { Toggle } from './settings/parts';
 import { Icon } from './Icon';
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from './Menu';
+import { createNames, NamesPanel, showFromFolder } from './NamesPanel';
 
 const field =
   'h-8 w-full rounded-control border border-line bg-field px-2.5 text-sm outline-none select-text focus:border-focus focus:ring-3 focus:ring-focus/20';
@@ -73,6 +74,15 @@ export function AddDialog(props: { onClose(): void }) {
 
   const links = () => linksIn(linksText());
   const count = () => files().length + links().length;
+
+  // Renaming, for one .torrent file: its files are known before it's added. A magnet's
+  // aren't until Transmission fetches them, so it's renamed afterwards (Smart Rename).
+  const nameSource = () =>
+    files().length === 1 && !links().length ? { kind: 'file' as const, path: files()[0]! } : null;
+  const names = createNames({
+    source: nameSource,
+    defaultShow: () => (chosenDir() !== null ? showFromFolder(folder()) : null),
+  });
   const labelList = () => [
     ...new Set(
       labelsText()
@@ -116,6 +126,7 @@ export function AddDialog(props: { onClose(): void }) {
       ...files().map((path) => ({ kind: 'file' as const, path })),
       ...links().map((link) => ({ kind: 'link' as const, link })),
     ];
+    const naming = nameSource() ? names.options() : null;
     try {
       const results = await api.addTorrents(sources, {
         downloadDir: chosenDir() === null ? null : normalizeFolder(folder()),
@@ -131,6 +142,25 @@ export function AddDialog(props: { onClose(): void }) {
       });
       if (chosenDir() !== null && (added.length || already.length)) rememberFolder(folder());
 
+      // Renamed just after it's added (Transmission can't name things as it adds them).
+      const first = results[0];
+      let renameNote = '';
+      if (naming && results.length === 1 && first?.outcome === 'added') {
+        try {
+          const applied = await api.applyNames(first.hash, naming);
+          if (applied.failures.length) {
+            toast(`Added, but some names didn’t change: ${applied.failures.join('; ')}`, { error: true });
+          } else if (applied.renamed) {
+            renameNote = applied.renamed === 1 ? ' Renamed 1 file.' : ` Renamed ${applied.renamed} files and folders.`;
+            if (applied.movedTo) renameNote += ` Moved into ${applied.movedTo}.`;
+          }
+        } catch (err) {
+          toast(`Added, but not renamed: ${errorMessage(err)}`, { error: true });
+        }
+      } else if (naming && first?.outcome === 'duplicate') {
+        renameNote = ' Its names were left as they were.';
+      }
+
       const done = [
         added.length ? (added.length === 1 ? `Added “${added[0]}”` : `Added ${added.length} torrents`) : '',
         already.length
@@ -141,7 +171,7 @@ export function AddDialog(props: { onClose(): void }) {
       ].filter(Boolean);
       if (!failed.length) {
         props.onClose();
-        if (done.length) toast(`${done.join('. ')}.`);
+        if (done.length) toast(`${done.join('. ')}.${renameNote}`);
         return;
       }
       // Keep what failed, with why, so it can be fixed and tried again.
@@ -262,6 +292,19 @@ export function AddDialog(props: { onClose(): void }) {
           </Show>
         </p>
       </div>
+
+      {/* What they're called. */}
+      <Show when={nameSource()}>
+        <div class="mt-5">
+          <NamesPanel names={names} />
+        </div>
+      </Show>
+      <Show when={links().length === 1 && !files().length}>
+        <p class="mt-5 text-xs text-muted">
+          To rename a magnet link’s files (for a TV library, say), choose Smart Rename… from its menu once Transmission
+          has fetched them.
+        </p>
+      </Show>
 
       {/* Labels and starting. */}
       <div class="mt-5">

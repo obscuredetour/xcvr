@@ -4,7 +4,7 @@ import FolderOpen from 'lucide-solid/icons/folder-open';
 import SquareArrowOutUpRight from 'lucide-solid/icons/square-arrow-out-up-right';
 import X from 'lucide-solid/icons/x';
 
-import { act, copyMagnets, openHere, remove, renameTorrent, setLocation } from '../actions';
+import { act, copyMagnets, openHere, remove, renameTorrent, setLocation, smartRename } from '../actions';
 import { smallButton } from '../buttons';
 import { formatEta, formatPercent, formatSize, progressOf, statusLabel, statusTone } from '../format';
 import { details, type InspectorTab, inspectorTab, setInspectorTab } from '../inspector';
@@ -127,6 +127,7 @@ function One() {
             <MenuItem shortcut={keys('F2')} onSelect={() => renameTorrent(hash())}>
               Rename…
             </MenuItem>
+            <MenuItem onSelect={() => smartRename(hash())}>Smart Rename…</MenuItem>
             <MenuItem shortcut={keys('mod+L')} onSelect={() => setLocation([hash()])}>
               Set Location…
             </MenuItem>

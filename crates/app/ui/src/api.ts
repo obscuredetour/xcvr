@@ -17,6 +17,13 @@ import type { GeneralSettings } from './bindings/GeneralSettings';
 import type { Incoming } from './bindings/Incoming';
 import type { MappingView } from './bindings/MappingView';
 import type { Metainfo } from './bindings/Metainfo';
+import type { NameOptions } from './bindings/NameOptions';
+import type { NamePlan } from './bindings/NamePlan';
+import type { NamesApplied } from './bindings/NamesApplied';
+import type { PlanSource } from './bindings/PlanSource';
+import type { TmdbTitle } from './bindings/TmdbTitle';
+import type { MediaKind } from './bindings/MediaKind';
+import type { TmdbStatus } from './bindings/TmdbStatus';
 import type { PathMapping } from './bindings/PathMapping';
 import type { PortTest } from './bindings/PortTest';
 import type { Renamed } from './bindings/Renamed';
@@ -49,8 +56,13 @@ export type {
   GeneralSettings,
   Incoming,
   MappingView,
+  MediaKind,
   Metainfo,
+  NameOptions,
+  NamePlan,
+  NamesApplied,
   PathMapping,
+  PlanSource,
   PortTest,
   Problem,
   Profile,
@@ -58,6 +70,8 @@ export type {
   SessionSet,
   SessionStats,
   TestResult,
+  TmdbTitle,
+  TmdbStatus,
   Torrent,
   TorrentAction,
   TorrentSet,
@@ -116,6 +130,16 @@ export const api = {
   setTorrents: (hashes: string[], set: TorrentSet) => invoke<void>('set_torrents', { hashes, set }),
   /** Rename the torrent (`path` its current name) or a file or folder in it (`path` as in its files). */
   renameTorrent: (hash: string, path: string, name: string) => invoke<Renamed>('rename_torrent', { hash, path, name }),
+  /** What renaming a torrent's folder and files (for a TV library) would do. */
+  namePlan: (source: PlanSource, options: NameOptions) => invoke<NamePlan>('name_plan', { source, options }),
+  /** Rename a torrent's files and folder as `namePlan` plans it. */
+  applyNames: (hash: string, options: NameOptions) => invoke<NamesApplied>('apply_names', { hash, options }),
+  /** Whether there's a TMDB key, and where it's kept. */
+  tmdbStatus: () => invoke<TmdbStatus>('tmdb_status'),
+  /** Save a TMDB key (checked with TMDB first), or forget it with null. */
+  setTmdbKey: (key: string | null) => invoke<TmdbStatus>('set_tmdb_key', { key }),
+  /** Shows or movies on TMDB; "Name (1962)" searches by year too. */
+  tmdbSearch: (query: string, kind: MediaKind) => invoke<TmdbTitle[]>('tmdb_search', { query, kind }),
   /** Every Transmission setting. */
   sessionSettings: () => invoke<Session>('session_settings'),
   /** Change settings; resolves to all of them as they are now. */

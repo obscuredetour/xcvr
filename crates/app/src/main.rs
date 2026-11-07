@@ -11,12 +11,15 @@ mod labels;
 mod mappings;
 #[cfg(target_os = "macos")]
 mod menu;
+mod naming;
 mod originals;
 mod poller;
 mod prefs;
 mod profiles;
+mod renames;
 mod secrets;
 mod settings;
+mod tmdb;
 mod tray;
 mod updates;
 
@@ -75,6 +78,7 @@ fn main() {
             app.manage(mappings::Mappings::load(dir.join("paths.json")));
             app.manage(originals::Originals::load(dir.join("originals.json")));
             app.manage(inspect::CopyNames::default());
+            app.manage(tmdb::Tmdb::default());
             app.manage(Poller::start(app.handle().clone()));
             tray::build(app.handle())?;
             general::apply_shortcut(app.handle(), shortcut_enabled);
@@ -158,6 +162,11 @@ fn main() {
             inspect::torrents_folder,
             inspect::original_names,
             inspect::open_torrent,
+            renames::name_plan,
+            renames::apply_names,
+            tmdb::tmdb_status,
+            tmdb::set_tmdb_key,
+            tmdb::tmdb_search,
             labels::edit_labels,
             labels::rename_label,
             labels::delete_label,

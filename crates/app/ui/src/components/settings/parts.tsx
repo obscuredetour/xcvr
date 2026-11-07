@@ -117,6 +117,7 @@ export function Segmented<T extends string>(props: {
       <For each={props.options}>
         {([value, label]) => (
           <button
+            type="button"
             class="rounded-inset px-3 py-1 text-xs font-medium text-muted aria-pressed:bg-popover aria-pressed:text-fg aria-pressed:shadow-card"
             aria-pressed={props.value === value}
             onClick={() => props.onChange(value)}

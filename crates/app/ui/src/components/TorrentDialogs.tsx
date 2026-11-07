@@ -1,12 +1,21 @@
 import { createSignal, onMount, Show } from 'solid-js';
 
-import { relocating, renaming, setRelocating, setRenaming } from '../actions';
+import {
+  relocating,
+  renaming,
+  setRelocating,
+  setRenaming,
+  setSmartRenaming,
+  smartRename,
+  smartRenaming,
+} from '../actions';
 import { api, errorMessage } from '../api';
 import { primaryButton, secondaryButton } from '../buttons';
 import { rememberFolder } from '../folders';
 import { toast } from '../toast';
 import { torrent } from '../torrents';
 import { FolderMenu } from './AddDialog';
+import { createNames, NamesPanel, showFromFolder } from './NamesPanel';
 
 const field =
   'h-8 w-full rounded-control border border-line bg-field px-2.5 text-sm outline-none select-text focus:border-focus focus:ring-3 focus:ring-focus/20';
@@ -17,6 +26,9 @@ export function TorrentDialogsHost() {
     <>
       <Show when={renaming()} keyed>
         {(r) => <RenameDialog hash={r.hash} path={r.path} current={r.current} onClose={() => setRenaming(null)} />}
+      </Show>
+      <Show when={smartRenaming()} keyed>
+        {(hash) => <SmartRenameDialog hash={hash} onClose={() => setSmartRenaming(null)} />}
       </Show>
       <Show when={relocating()} keyed>
         {(hashes) => <LocationDialog hashes={hashes} onClose={() => setRelocating(null)} />}
@@ -32,6 +44,10 @@ function Modal(props: {
   busy: boolean;
   disabled?: boolean;
   error: string | null;
+  /** Wider, for a list of names. */
+  wide?: boolean;
+  /** Beside the buttons, at the start. */
+  aside?: import('solid-js').JSX.Element;
   onSubmit(): void;
   onClose(): void;
   children: import('solid-js').JSX.Element;
@@ -42,7 +58,8 @@ function Modal(props: {
     <dialog
       ref={dialog}
       aria-label={props.title}
-      class="m-auto w-[min(480px,calc(100vw-48px))] animate-menu-in rounded-dialog border border-line bg-popover p-0 text-fg shadow-lift"
+      classList={{ 'w-[min(480px,calc(100vw-48px))]': !props.wide, 'w-[min(600px,calc(100vw-48px))]': !!props.wide }}
+      class="m-auto max-h-[calc(100vh-48px)] animate-menu-in overflow-y-auto rounded-dialog border border-line bg-popover p-0 text-fg shadow-lift"
       onCancel={(e) => {
         e.preventDefault();
         if (!props.busy) props.onClose();
@@ -65,6 +82,9 @@ function Modal(props: {
           )}
         </Show>
         <div class="mt-5 flex justify-end gap-2">
+          <Show when={props.aside}>
+            <div class="mr-auto flex items-center">{props.aside}</div>
+          </Show>
           <button type="button" class={secondaryButton} disabled={props.busy} onClick={() => props.onClose()}>
             Cancel
           </button>
@@ -106,6 +126,21 @@ function RenameDialog(props: { hash: string; path: string; current: string; onCl
       error={error()}
       onSubmit={() => void submit()}
       onClose={props.onClose}
+      aside={
+        <Show when={isTorrent()}>
+          <button
+            type="button"
+            class="cursor-pointer text-xs text-link hover:underline"
+            title="Name its folder and files for a TV or movie library"
+            onClick={() => {
+              props.onClose();
+              smartRename(props.hash);
+            }}
+          >
+            Smart Rename…
+          </button>
+        </Show>
+      }
     >
       <input
         ref={(el) =>
@@ -127,6 +162,58 @@ function RenameDialog(props: { hash: string; path: string; current: string; onCl
           ? 'Renames its folder (or file) on the host too. Its files inside keep their names.'
           : 'Renames it on the host too.'}
       </p>
+    </Modal>
+  );
+}
+
+/** Rename a torrent's folder and episodes for a TV library (NamesPanel), once Transmission knows its files. */
+function SmartRenameDialog(props: { hash: string; onClose(): void }) {
+  const [busy, setBusy] = createSignal(false);
+  const [error, setError] = createSignal<string | null>(null);
+  const names = createNames({
+    source: () => ({ kind: 'torrent', hash: props.hash }),
+    defaultShow: () => showFromFolder(torrent(props.hash)?.download_dir ?? ''),
+  });
+  names.setRenaming(true);
+
+  const submit = async () => {
+    const options = names.options();
+    if (!options) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const applied = await api.applyNames(props.hash, options);
+      if (applied.failures.length) {
+        setError(`Some names didn’t change: ${applied.failures.join('; ')}`);
+        return;
+      }
+      props.onClose();
+      toast(applied.renamed === 1 ? 'Renamed 1 file.' : `Renamed ${applied.renamed} files and folders.`);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const changes = () => {
+    const p = names.plan();
+    return p ? (p.top ? 1 : 0) + p.files.filter((f) => f.to).length : 0;
+  };
+
+  return (
+    <Modal
+      title="Smart Rename"
+      action={changes() > 1 ? `Rename ${changes()}` : 'Rename'}
+      busy={busy()}
+      disabled={!changes()}
+      error={error()}
+      wide
+      onSubmit={() => void submit()}
+      onClose={props.onClose}
+    >
+      <p class="mb-4 text-xs text-muted">{torrent(props.hash)?.name}. Renames its folder and files on the host too.</p>
+      <NamesPanel names={names} hideToggle />
     </Modal>
   );
 }
