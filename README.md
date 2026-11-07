@@ -57,7 +57,18 @@ Download it from the [latest release](https://github.com/obscuredetour/xcvr/rele
 - **macOS:** the `aarch64.dmg` for Apple silicon, or the `x64.dmg` for Intel. Transceiver isn't
   notarized by Apple, so the first time you open it, macOS says it can't verify it: open System
   Settings › Privacy & Security and choose **Open Anyway**.
-- **Linux:** the `.AppImage`, or the `.deb` or `.rpm` for your distribution.
+- **Linux, any distribution:** the installer puts the AppImage in `~/.local`, with an app-menu
+  entry, its icon, and magnet links and `.torrent` files opening in Transceiver (unless something
+  else already opens them). No sudo:
+
+  ```bash
+  curl -fsSL https://github.com/obscuredetour/xcvr/releases/latest/download/install.sh | sh
+  ```
+
+  Or download [install.sh](https://github.com/obscuredetour/xcvr/releases/latest/download/install.sh),
+  read it, and run `sh install.sh`; `sh install.sh --uninstall` removes it. AppImages need FUSE
+  (`fuse3`), which the installer checks for.
+- **Linux, by hand:** the `.AppImage`, or the `.deb` or `.rpm` for your distribution.
 - **Arch Linux and CachyOS:** a `PKGBUILD` in [packaging/aur](packaging/aur/README.md) installs the
   release with `makepkg -si`.
 

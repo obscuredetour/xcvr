@@ -57,7 +57,7 @@ impl From<&transmission::Error> for Problem {
 }
 
 /// Run keychain work off the async threads (a locked keyring can block, and may ask to unlock).
-async fn with_secrets<T: Send + 'static>(
+pub(crate) async fn with_secrets<T: Send + 'static>(
     secrets: &Arc<Secrets>,
     f: impl FnOnce(&Secrets) -> Result<T, String> + Send + 'static,
 ) -> Result<T, String> {

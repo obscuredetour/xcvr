@@ -1,5 +1,6 @@
 //! Reading a .torrent file on this machine, enough for the add dialog to show
-//! what it is (its name, size and files) before it's sent to Transmission.
+//! what it is (its name, size and files) before it's sent to Transmission,
+//! and to plan new names for its files.
 //! A minimal bencode reader: no info hash, no validation beyond what's read.
 
 use std::collections::BTreeMap;
@@ -16,6 +17,18 @@ pub struct Metainfo {
     pub total_size: i64,
     pub file_count: i64,
     pub private: bool,
+    pub files: Vec<MetaFile>,
+}
+
+/// A file in a .torrent.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
+pub struct MetaFile {
+    /// Its path as Transmission names it: `/`-separated, starting with the torrent's
+    /// folder (or just the name, for a torrent that's one file).
+    pub path: String,
+    /// Bytes.
+    pub length: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
@@ -33,15 +46,29 @@ pub fn read_metainfo(bytes: &[u8]) -> Result<Metainfo, BadMetainfo> {
     let name =
         [b"name.utf-8".as_slice(), b"name"].iter().find_map(|k| info.get(*k).and_then(Value::text)).unwrap_or_default();
 
-    let (total_size, file_count) = match info.get(b"files".as_slice()) {
+    let (total_size, file_count, paths) = match info.get(b"files".as_slice()) {
         Some(Value::List(files)) => {
             let total = files.iter().filter_map(|f| f.dict()?.get(b"length".as_slice())?.int()).sum();
-            (total, files.len() as i64)
+            let paths = files.iter().filter_map(|f| file_path(&name, f.dict()?)).collect();
+            (total, files.len() as i64, paths)
         }
-        _ => (info.get(b"length".as_slice()).and_then(Value::int).unwrap_or(0), 1),
+        _ => {
+            let length = info.get(b"length".as_slice()).and_then(Value::int).unwrap_or(0);
+            (length, 1, vec![MetaFile { path: name.clone(), length }])
+        }
     };
     let private = info.get(b"private".as_slice()).and_then(Value::int) == Some(1);
-    Ok(Metainfo { name, total_size, file_count, private })
+    Ok(Metainfo { name, total_size, file_count, private, files: paths })
+}
+
+/// A file in a torrent of several: its path under the torrent's folder (`name`), and its size.
+fn file_path(name: &str, file: &BTreeMap<&[u8], Value<'_>>) -> Option<MetaFile> {
+    let parts = [b"path.utf-8".as_slice(), b"path"].iter().find_map(|k| match file.get(*k) {
+        Some(Value::List(parts)) => parts.iter().map(Value::text).collect::<Option<Vec<_>>>(),
+        _ => None,
+    })?;
+    let path = std::iter::once(name.to_owned()).chain(parts).collect::<Vec<_>>().join("/");
+    Some(MetaFile { path, length: file.get(b"length".as_slice()).and_then(Value::int).unwrap_or(0) })
 }
 
 #[derive(Debug)]
@@ -133,7 +160,13 @@ mod tests {
         let t = b"d8:announce3:url4:infod6:lengthi1000e4:name8:test.iso12:piece lengthi16384e6:pieces20:aaaaaaaaaaaaaaaaaaaaee";
         assert_eq!(
             read_metainfo(t).unwrap(),
-            Metainfo { name: "test.iso".into(), total_size: 1000, file_count: 1, private: false }
+            Metainfo {
+                name: "test.iso".into(),
+                total_size: 1000,
+                file_count: 1,
+                private: false,
+                files: vec![MetaFile { path: "test.iso".into(), length: 1000 }]
+            }
         );
     }
 
@@ -142,7 +175,16 @@ mod tests {
         let t = b"d4:infod5:filesld6:lengthi10e4:pathl1:aeed6:lengthi32e4:pathl3:dir1:beee4:name6:folder7:privatei1eee";
         assert_eq!(
             read_metainfo(t).unwrap(),
-            Metainfo { name: "folder".into(), total_size: 42, file_count: 2, private: true }
+            Metainfo {
+                name: "folder".into(),
+                total_size: 42,
+                file_count: 2,
+                private: true,
+                files: vec![
+                    MetaFile { path: "folder/a".into(), length: 10 },
+                    MetaFile { path: "folder/dir/b".into(), length: 32 }
+                ]
+            }
         );
     }
 

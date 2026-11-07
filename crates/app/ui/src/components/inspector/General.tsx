@@ -1,7 +1,7 @@
 import { createResource, Show } from 'solid-js';
 import Copy from 'lucide-solid/icons/copy';
 
-import { renameTorrent, setLocation } from '../../actions';
+import { renameTorrent, setLocation, smartRename } from '../../actions';
 import { api, type Torrent } from '../../api';
 import {
   formatDateTime,
@@ -84,6 +84,14 @@ export function GeneralTab(props: { t: Torrent }) {
                 {t().name}{' '}
                 <button class={link} onClick={() => renameTorrent(t().hash_string!)}>
                   Change…
+                </button>
+                {' · '}
+                <button
+                  class={link}
+                  title="Name its folder and files for a TV or movie library"
+                  onClick={() => smartRename(t().hash_string!)}
+                >
+                  Smart Rename…
                 </button>
                 <Show when={original()}>
                   {(o) => (

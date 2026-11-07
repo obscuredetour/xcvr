@@ -2,10 +2,12 @@ import { createMemo, createSignal, Index, on, Show, createEffect } from 'solid-j
 import ChevronRight from 'lucide-solid/icons/chevron-right';
 import FileIcon from 'lucide-solid/icons/file';
 import FolderIcon from 'lucide-solid/icons/folder';
+import WandSparkles from 'lucide-solid/icons/wand-sparkles';
 
-import { openHere, setRenaming } from '../../actions';
+import { openHere, setRenaming, smartRename } from '../../actions';
 import { api, errorMessage, type Torrent, type TorrentSet } from '../../api';
 import { buildTree, type FileNode, type PriorityValue, visibleRows } from '../../filetree';
+import { smallButton } from '../../buttons';
 import { formatPercent, formatSize } from '../../format';
 import { toast } from '../../toast';
 import { Icon } from '../Icon';
@@ -65,6 +67,17 @@ export function FilesTab(props: { t: Torrent }) {
       when={props.t.files?.length}
       fallback={<p class="p-5 text-xs text-muted">No files yet: the torrent’s metadata is still coming from peers.</p>}
     >
+      <div class="flex items-center justify-between gap-2 px-3 pt-2.5 pb-1 text-xs text-muted">
+        <span>{props.t.files!.length === 1 ? '1 file' : `${props.t.files!.length} files`}</span>
+        <button
+          class={smallButton}
+          title="Name its folder and files for a TV or movie library"
+          onClick={() => smartRename(hash())}
+        >
+          <Icon of={WandSparkles} size={12} />
+          Smart Rename…
+        </button>
+      </div>
       <ul class="py-1" role="tree" aria-label="Files">
         {/* Index: the tree is rebuilt on every update; rows are reused by position. */}
         <Index each={rows()}>

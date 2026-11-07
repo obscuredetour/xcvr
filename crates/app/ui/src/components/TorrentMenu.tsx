@@ -8,6 +8,7 @@ import {
   openHere,
   remove,
   renameTorrent,
+  smartRename,
   setLocation,
   torrentMenu,
 } from '../actions';
@@ -107,6 +108,12 @@ function TorrentMenu(props: { x: number; y: number; hashes: string[] }) {
       <Show when={props.hashes.length === 1}>
         <MenuItem shortcut={keys('F2')} onSelect={() => renameTorrent(props.hashes[0])}>
           Rename…
+        </MenuItem>
+        <MenuItem
+          title="Name its folder and files for a TV or movie library"
+          onSelect={() => smartRename(props.hashes[0])}
+        >
+          Smart Rename…
         </MenuItem>
       </Show>
       <MenuItem shortcut={keys('mod+L')} onSelect={() => setLocation(props.hashes)}>

@@ -11,13 +11,17 @@ mod labels;
 mod mappings;
 #[cfg(target_os = "macos")]
 mod menu;
+mod naming;
 mod originals;
 mod poller;
 mod prefs;
 mod profiles;
+mod renames;
 mod secrets;
 mod settings;
+mod tmdb;
 mod tray;
+mod tvmaze;
 mod updates;
 
 use std::path::Path;
@@ -75,14 +79,17 @@ fn main() {
             app.manage(mappings::Mappings::load(dir.join("paths.json")));
             app.manage(originals::Originals::load(dir.join("originals.json")));
             app.manage(inspect::CopyNames::default());
+            app.manage(tmdb::Tmdb::default());
+            app.manage(tvmaze::Tvmaze::default());
             app.manage(Poller::start(app.handle().clone()));
             tray::build(app.handle())?;
             general::apply_shortcut(app.handle(), shortcut_enabled);
 
-            // Linux: dev builds need their own desktop entry for the titlebar icon (packages ship one).
+            // Linux: dev builds and AppImages need their own desktop entry for the window's
+            // icon (packages ship one).
             #[cfg(target_os = "linux")]
-            if let Ok(data) = app.path().data_dir() {
-                let _ = desktop::sync_dev_entry(&data);
+            if let (Ok(data), Ok(app_data)) = (app.path().data_dir(), app.path().app_data_dir()) {
+                let _ = desktop::sync_entry(&data, &app_data);
             }
 
             // The window starts hidden (tauri.conf.json): shown now, unless launched at login.
@@ -158,6 +165,12 @@ fn main() {
             inspect::torrents_folder,
             inspect::original_names,
             inspect::open_torrent,
+            renames::name_plan,
+            renames::apply_names,
+            tmdb::tmdb_status,
+            tmdb::set_tmdb_key,
+            tmdb::tmdb_search,
+            tvmaze::tvmaze_search,
             labels::edit_labels,
             labels::rename_label,
             labels::delete_label,

@@ -40,8 +40,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: macOS Apple Silicon, os: macos-14 }
-          - { name: macOS Intel, os: macos-15-intel }
+          # macOS 26 images, for their Xcode 26: macOS 26 draws an app built
+          # against an older SDK in its old style (the traffic lights out of
+          # line with the toolbar). The app still runs on macOS 13
+          # (bundle.macOS.minimumSystemVersion sets the deployment target).
+          - { name: macOS Apple Silicon, os: macos-26 }
+          - { name: macOS Intel, os: macos-26-intel }
           # The oldest supported Ubuntu, so the AppImage's glibc and WebKitGTK suit most distributions.
           - { name: Linux, os: ubuntu-22.04 }
     steps:
@@ -64,6 +68,13 @@ jobs:
       - name: Ad-hoc signing (macOS)
         if: runner.os == 'macOS'
         run: echo "APPLE_SIGNING_IDENTITY=-" >> "$GITHUB_ENV"
+      # An older SDK puts the traffic lights out of place on macOS 26 (see the matrix).
+      - name: macOS SDK is 26 or newer
+        if: runner.os == 'macOS'
+        run: |
+          sdk="$(xcrun --sdk macosx --show-sdk-version)"
+          echo "Xcode $(xcodebuild -version | head -1), macOS SDK $sdk"
+          [ "${sdk%%.*}" -ge 26 ] || { echo "The macOS SDK is $sdk; the build needs 26 or newer"; exit 1; }
       - name: Linux build dependencies
         if: runner.os == 'Linux'
         run: |
@@ -103,8 +114,24 @@ jobs:
             Transceiver __VERSION__. Needs Transmission 4.1 or newer on the host.
 
             - **macOS** 13 or later: `aarch64.dmg` for Apple silicon, `x64.dmg` for Intel. Not notarized: the first time, macOS says it can't verify Transceiver. Open System Settings › Privacy & Security, choose **Open Anyway** beside "Transceiver was blocked", and confirm.
-            - **Linux**: the `.AppImage`, or the `.deb` / `.rpm` for your distribution. The tray icon needs `libayatana-appindicator`. On Arch, see `packaging/aur` in the repository.
+            - **Linux**: `curl -fsSL https://github.com/obscuredetour/xcvr/releases/latest/download/install.sh | sh` installs the AppImage in `~/.local` with an app-menu entry (no sudo). Or the `.AppImage`, or the `.deb` / `.rpm` for your distribution. The tray icon needs `libayatana-appindicator`. On Arch, see `packaging/aur` in the repository.
 
             Installed from these, Transceiver updates itself (Settings › About).
           releaseDraft: true
           prerelease: false
+      # For install.sh: the AppImage's and the icon's checksums, the icon (the menu entry's),
+      # and the script itself, so releases/latest/download/install.sh is always the latest's.
+      - name: Installer files (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          out="$RUNNER_TEMP/installer"
+          mkdir -p "$out"
+          cp crates/app/icons/128x128@2x.png "$out/transceiver.png"
+          cp install.sh "$out/install.sh"
+          (cd target/release/bundle/appimage && sha256sum -- *.AppImage) > "$out/SHA256SUMS"
+          (cd "$out" && sha256sum transceiver.png) >> "$out/SHA256SUMS"
+          cat "$out/SHA256SUMS"
+          gh release upload "$GITHUB_REF_NAME" "$out/SHA256SUMS" "$out/transceiver.png" "$out/install.sh" --clobber
