@@ -85,10 +85,11 @@ fn main() {
             tray::build(app.handle())?;
             general::apply_shortcut(app.handle(), shortcut_enabled);
 
-            // Linux: dev builds need their own desktop entry for the titlebar icon (packages ship one).
+            // Linux: dev builds and AppImages need their own desktop entry for the window's
+            // icon (packages ship one).
             #[cfg(target_os = "linux")]
-            if let Ok(data) = app.path().data_dir() {
-                let _ = desktop::sync_dev_entry(&data);
+            if let (Ok(data), Ok(app_data)) = (app.path().data_dir(), app.path().app_data_dir()) {
+                let _ = desktop::sync_entry(&data, &app_data);
             }
 
             // The window starts hidden (tauri.conf.json): shown now, unless launched at login.
